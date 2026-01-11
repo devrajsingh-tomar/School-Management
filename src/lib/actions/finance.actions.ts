@@ -7,7 +7,7 @@ import Student from "@/lib/db/models/Student";
 import connectDB from "@/lib/db/connect";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { logAudit } from "@/lib/actions/audit.actions";
+import { logAction } from "@/lib/actions/audit.actions";
 import mongoose from "mongoose";
 
 // --- VALIDATORS ---
@@ -231,13 +231,13 @@ export async function collectFee(data: {
         remarks: data.remarks
     });
 
-    await logAudit({
-        schoolId: session.user.schoolId,
-        actor: session.user.id,
-        action: "COLLECT_FEE",
-        target: payment._id.toString(),
-        details: { amount: data.amount, receipt: receiptNumber }
-    });
+    await logAction(
+        session.user.id,
+        "COLLECT_FEE",
+        "FEE_PAYMENT",
+        { amount: data.amount, receipt: receiptNumber, paymentId: payment._id.toString() },
+        session.user.schoolId
+    );
 
     revalidatePath("/school/finance");
     return JSON.parse(JSON.stringify(payment));
@@ -322,14 +322,42 @@ export async function waiveFee(data: {
         remarks: `Waiver: ${data.reason} (Granted by ${session.user.name})`
     });
 
-    await logAudit({
-        schoolId: session.user.schoolId,
-        actor: session.user.id,
-        action: "WAIVE_FEE",
-        target: payment._id.toString(),
-        details: { amount: data.amount, receipt: receiptNumber, reason: data.reason }
-    });
+    await logAction(
+        session.user.id,
+        "WAIVE_FEE",
+        "FEE_PAYMENT",
+        { amount: data.amount, receipt: receiptNumber, reason: data.reason, paymentId: payment._id.toString() },
+        session.user.schoolId
+    );
 
     revalidatePath("/school/finance");
     return JSON.parse(JSON.stringify(payment));
+}
+
+// --- WRAPPER FOR FORM ACTIONS ---
+
+export async function recordPayment(_prevState: any, formData: FormData) {
+    const session = await auth();
+    if (!session?.user?.schoolId) return { message: "Unauthorized" };
+
+    const studentId = formData.get("studentId") as string;
+    const feeId = formData.get("feeId") as string;
+    const amountStr = formData.get("amount") as string;
+
+    if (!studentId || !amountStr) {
+        return { message: "Missing required fields" };
+    }
+
+    try {
+        await collectFee({
+            studentId,
+            amount: parseFloat(amountStr),
+            method: "Cash",
+            remarks: `Fee Payment for ID: ${feeId || "General"}`
+        });
+        return { message: "Payment Recorded Successfully" };
+    } catch (error: any) {
+        console.error("Payment Error:", error);
+        return { message: error.message || "Failed to record payment" };
+    }
 }

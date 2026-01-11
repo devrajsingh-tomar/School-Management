@@ -2,11 +2,13 @@ import Link from "next/link";
 import { getDailyAttendanceStats } from "@/lib/actions/attendance.actions";
 import {
     CalendarCheck,
-    Users,
     UserX,
     Clock,
     ArrowRight
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default async function AttendanceDashboard() {
     const today = new Date().toISOString().split("T")[0];
@@ -18,41 +20,56 @@ export default async function AttendanceDashboard() {
     const late = getCount("Late");
 
     return (
-        <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Attendance Dashboard</h1>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <DashboardCard icon={<CalendarCheck className="text-green-600" />} title="Present" value={present} color="bg-green-50" />
-                <DashboardCard icon={<UserX className="text-red-600" />} title="Absent" value={absent} color="bg-red-50" />
-                <DashboardCard icon={<Clock className="text-yellow-600" />} title="Late" value={late} color="bg-yellow-50" />
-                <div className="bg-white p-6 rounded-lg shadow flex flex-col justify-center items-center gap-2">
-                    <Link href="/school/attendance/student" className="w-full">
-                        <button className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 flex items-center justify-center gap-2">
-                            Mark Attendance <ArrowRight size={16} />
-                        </button>
-                    </Link>
-                    <Link href="/school/attendance/leaves" className="text-sm text-gray-500 hover:text-indigo-600 underline">
-                        Manage Leaves
-                    </Link>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <PageHeader title="Attendance Dashboard" description={`Overview for ${today}.`}>
+                <div className="flex gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/school/attendance/leaves">Manage Leaves</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/school/attendance/student">
+                            Mark Attendance <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
                 </div>
+            </PageHeader>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Present Today</CardTitle>
+                        <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-600">{present}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Absent</CardTitle>
+                        <UserX className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-red-600">{absent}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Late Arrivals</CardTitle>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-yellow-600">{late}</div>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* Placeholder for Calendar View or Graph */}
-            <div className="bg-white p-8 rounded-lg shadow min-h-[300px] flex items-center justify-center text-gray-400">
-                Monthly Heatmap Visualization Coming Soon...
-            </div>
+            <Card className="min-h-[300px] flex items-center justify-center bg-gray-50/50 border-dashed">
+                <div className="text-center">
+                    <p className="text-muted-foreground mb-2">Detailed Monthly Heatmap Visualization</p>
+                    <Button variant="secondary" size="sm" disabled>Coming Soon</Button>
+                </div>
+            </Card>
         </div>
     );
-}
-
-function DashboardCard({ icon, title, value, color }: any) {
-    return (
-        <div className={`p-6 rounded-lg shadow ${color} flex items-center gap-4`}>
-            <div className="bg-white p-3 rounded-full shadow-sm">{icon}</div>
-            <div>
-                <p className="text-sm text-gray-600">{title}</p>
-                <h3 className="text-3xl font-bold text-gray-800">{value}</h3>
-            </div>
-        </div>
-    )
 }

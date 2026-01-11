@@ -1,30 +1,14 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
 import { createClass, FormState } from "@/lib/actions/academic.actions";
 import { cn } from "@/lib/utils";
 
 const initialState: FormState = { message: "" };
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <button
-            type="submit"
-            disabled={pending}
-            className={cn(
-                "inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none disabled:opacity-50",
-                pending && "cursor-not-allowed"
-            )}
-        >
-            {pending ? "Creating..." : "Add Class"}
-        </button>
-    );
-}
-
 export default function CreateClassForm() {
     // @ts-ignore
-    const [state, formAction] = useFormState(createClass, initialState);
+    const [state, formAction, isPending] = useActionState(createClass, initialState);
 
     return (
         <form action={formAction} className="flex gap-2 items-start">
@@ -39,7 +23,16 @@ export default function CreateClassForm() {
                 />
                 {state?.message && <p className={cn("text-xs mt-1", state.message.includes("success") ? "text-green-600" : "text-red-500")}>{state.message}</p>}
             </div>
-            <SubmitButton />
+            <button
+                type="submit"
+                disabled={isPending}
+                className={cn(
+                    "inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none disabled:opacity-50",
+                    isPending && "cursor-not-allowed"
+                )}
+            >
+                {isPending ? "Creating..." : "Add Class"}
+            </button>
         </form>
     );
 }

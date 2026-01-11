@@ -26,16 +26,16 @@ export async function markClassAttendance(data: {
     const operations = data.records.map(r => ({
         updateOne: {
             filter: {
-                school: session.user.schoolId,
+                school: new mongoose.Types.ObjectId(session.user.schoolId),
                 date: dateOnly,
-                student: r.studentId
+                student: new mongoose.Types.ObjectId(r.studentId)
             },
             update: {
                 $set: {
-                    userType: "Student",
-                    class: data.classId,
-                    status: r.status,
-                    markedBy: session.user.id
+                    userType: "Student" as const,
+                    class: new mongoose.Types.ObjectId(data.classId),
+                    status: r.status as "Present" | "Absent" | "Late" | "Half-Day" | "Holiday",
+                    markedBy: new mongoose.Types.ObjectId(session.user.id)
                 }
             },
             upsert: true
@@ -49,7 +49,7 @@ export async function markClassAttendance(data: {
 
 export async function getAttendanceByDate(classId: string, dateStr: string) {
     const session = await auth();
-    if (!session?.user?.schoolId) return [];
+    if (!session?.user?.schoolId) return {};
 
     await connectDB();
     const date = new Date(dateStr);
@@ -153,3 +153,62 @@ export async function updateLeaveStatus(id: string, status: string) {
 
     revalidatePath("/school/attendance/leaves");
 }
+
+// --- STAFF ATTENDANCE ---
+
+export async function markStaffAttendance(data: {
+    date: Date;
+    records: { staffId: string; status: string }[];
+}) {
+    const session = await auth();
+    if (!session?.user?.schoolId) throw new Error("Unauthorized");
+
+    await connectDB();
+    const dateOnly = new Date(data.date);
+    dateOnly.setHours(0, 0, 0, 0);
+
+    const operations = data.records.map(r => ({
+        updateOne: {
+            filter: {
+                school: new mongoose.Types.ObjectId(session.user.schoolId),
+                date: dateOnly,
+                staff: new mongoose.Types.ObjectId(r.staffId)
+            },
+            update: {
+                $set: {
+                    userType: "Staff" as const,
+                    status: r.status as "Present" | "Absent" | "Late" | "Half-Day" | "Holiday",
+                    markedBy: new mongoose.Types.ObjectId(session.user.id)
+                }
+            },
+            upsert: true
+        }
+    }));
+
+    await Attendance.bulkWrite(operations);
+    revalidatePath("/school/attendance/staff");
+    return { success: true };
+}
+
+export async function getStaffAttendanceByDate(dateStr: string) {
+    const session = await auth();
+    if (!session?.user?.schoolId) return {};
+
+    await connectDB();
+    const date = new Date(dateStr);
+    date.setHours(0, 0, 0, 0);
+
+    const records = await Attendance.find({
+        school: session.user.schoolId,
+        date: date,
+        userType: "Staff"
+    }).lean();
+
+    const statusMap: Record<string, string> = {};
+    records.forEach((r: any) => {
+        statusMap[r.staff.toString()] = r.status;
+    });
+
+    return statusMap;
+}
+

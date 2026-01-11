@@ -39,7 +39,7 @@ export default async function TransportPage() {
                                 <Bus className="text-yellow-500" size={24} />
                             </div>
 
-                            <div className="space-y-2 text-sm text-gray-600">
+                            <div className="space-y-2 text-sm text-gray-600 mb-4">
                                 <div className="flex justify-between">
                                     <span>Driver:</span>
                                     <span className="font-semibold">{route.driverName}</span>
@@ -53,6 +53,12 @@ export default async function TransportPage() {
                                     <span className="font-bold text-green-600">Rs. {route.monthlyCost}</span>
                                 </div>
                             </div>
+
+                            <Link href={`/school/transport/${route._id}/students`}>
+                                <button className="w-full text-indigo-600 border border-indigo-100 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-50 mb-4">
+                                    View Assigned Students
+                                </button>
+                            </Link>
 
                             <div className="mt-4 pt-4 border-t">
                                 <h4 className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-1">

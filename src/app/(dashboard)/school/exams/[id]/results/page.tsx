@@ -1,6 +1,6 @@
 import { getExamById, getMarksForExam, publishExamResults } from "@/lib/actions/exam.actions";
 import Link from "next/link";
-import { Lock, FileText, CheckCircle } from "lucide-react";
+import { Lock, FileText, CheckCircle, BarChart } from "lucide-react";
 
 export default async function ExamResultsPage({ params }: { params: { id: string } }) {
     const exam = await getExamById(params.id);
@@ -11,7 +11,15 @@ export default async function ExamResultsPage({ params }: { params: { id: string
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Results: {exam.name}</h1>
-                    <p className="text-gray-500">Class {exam.class.name} • {results.length} Students Graded</p>
+                    <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                        <span>Class {exam.class.name}</span>
+                        <span>•</span>
+                        <span>{results.length} Students Graded</span>
+                        <span>•</span>
+                        <Link href={`/school/exams/${params.id}/analytics`} className="text-indigo-600 font-medium hover:underline flex items-center gap-1">
+                            <BarChart size={14} /> View Analytics
+                        </Link>
+                    </div>
                 </div>
                 {!exam.isPublished ? (
                     <form action={async () => {
@@ -57,7 +65,7 @@ export default async function ExamResultsPage({ params }: { params: { id: string
                                     <td className="p-3 text-right font-mono">{res.percentage.toFixed(1)}%</td>
                                     <td className="p-3 text-center">
                                         <span className={`px-2 py-1 rounded font-bold text-xs ${res.grade.startsWith("A") ? "bg-green-100 text-green-700" :
-                                                res.grade === "F" ? "bg-red-100 text-red-700" : "bg-blue-50 text-blue-700"
+                                            res.grade === "F" ? "bg-red-100 text-red-700" : "bg-blue-50 text-blue-700"
                                             }`}>{res.grade}</span>
                                     </td>
                                     <td className="p-3 text-center">

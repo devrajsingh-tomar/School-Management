@@ -1,28 +1,14 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
 import { createUser, CreateUserState } from "@/lib/actions/user.actions";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 const initialState: CreateUserState = { message: "", errors: {} };
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <button
-            type="submit"
-            disabled={pending}
-            className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
-        >
-            {pending ? "Adding User..." : "Add User"}
-        </button>
-    );
-}
-
 export default function CreateUserForm({ classes }: { classes?: any[] }) {
-    // @ts-ignore
-    const [state, formAction] = useFormState(createUser, initialState);
+    const [state, formAction, isPending] = useActionState(createUser, initialState);
     const [role, setRole] = useState("TEACHER");
     const [selectedClassId, setSelectedClassId] = useState("");
 
@@ -123,7 +109,13 @@ export default function CreateUserForm({ classes }: { classes?: any[] }) {
             </div>
 
             <div className="flex justify-end">
-                <SubmitButton />
+                <button
+                    type="submit"
+                    disabled={isPending}
+                    className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                >
+                    {isPending ? "Adding User..." : "Add User"}
+                </button>
             </div>
         </form>
     );

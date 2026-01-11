@@ -1,29 +1,25 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
 
 export interface IAuditLog extends Document {
-    school?: Types.ObjectId; // Optional because SuperAdmin actions might not belong to a school
-    actor: Types.ObjectId;
+    school?: Types.ObjectId; // Optional: System level events might not have school
+    user?: Types.ObjectId; // Who performed
     action: string;
-    target?: string; // ID of the created/modified entity
-    details?: any;
-    ipAddress?: string;
-    createdAt: Date;
+    entity: string;
+    details: any;
+    timestamp: Date;
 }
 
 const AuditLogSchema = new Schema<IAuditLog>(
     {
         school: { type: Schema.Types.ObjectId, ref: "School" },
-        actor: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        user: { type: Schema.Types.ObjectId, ref: "User" },
         action: { type: String, required: true },
-        target: { type: String },
+        entity: { type: String, required: true },
         details: { type: Schema.Types.Mixed },
-        ipAddress: { type: String },
+        timestamp: { type: Date, default: Date.now },
     },
-    { timestamps: { createdAt: true, updatedAt: false } }
+    { timestamps: true }
 );
-
-// TTL Index: Logs expire after 90 days
-AuditLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 90 });
 
 const AuditLog: Model<IAuditLog> =
     mongoose.models.AuditLog || mongoose.model<IAuditLog>("AuditLog", AuditLogSchema);

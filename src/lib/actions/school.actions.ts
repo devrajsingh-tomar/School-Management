@@ -7,7 +7,7 @@ import connectDB from "@/lib/db/connect";
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { logAudit } from "@/lib/actions/audit.actions";
+import { logAction } from "@/lib/actions/audit.actions";
 
 // Input validation schemas
 const createSchoolSchema = z.object({
@@ -87,11 +87,14 @@ export async function createSchool(prevState: CreateSchoolState, formData: FormD
             isActive: true
         });
 
-        await logAudit({
-            action: "CREATE_SCHOOL",
-            target: newSchool._id.toString(),
-            details: { name, slug }
-        });
+        const session = await auth();
+        await logAction(
+            session?.user?.id || "SYSTEM",
+            "CREATE_SCHOOL",
+            "SCHOOL",
+            { name, slug, schoolId: newSchool._id.toString() },
+            newSchool._id.toString()
+        );
 
     } catch (error) {
         console.error("Creation Error:", error);

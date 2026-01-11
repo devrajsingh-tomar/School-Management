@@ -1,27 +1,13 @@
 "use client";
 
+import { useActionState } from "react";
 import { recordPayment } from "@/lib/actions/finance.actions";
-import { useFormState, useFormStatus } from "react-dom";
 import { cn } from "@/lib/utils";
 
 const initialState = { message: "" };
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <button
-            type="submit"
-            disabled={pending}
-            className="inline-flex justify-center rounded-md border border-transparent bg-green-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none disabled:opacity-50"
-        >
-            {pending ? "Recording..." : "Record Payment"}
-        </button>
-    );
-}
-
 export default function RecordPaymentForm({ students, fees }: { students: any[], fees: any[] }) {
-    // @ts-ignore
-    const [state, formAction] = useFormState(recordPayment, initialState);
+    const [state, formAction, isPending] = useActionState(recordPayment, initialState);
 
     return (
         <form action={formAction} className="bg-white p-6 rounded shadow space-y-4">
@@ -55,7 +41,13 @@ export default function RecordPaymentForm({ students, fees }: { students: any[],
             </div>
 
             <div className="flex justify-end">
-                <SubmitButton />
+                <button
+                    type="submit"
+                    disabled={isPending}
+                    className="inline-flex justify-center rounded-md border border-transparent bg-green-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none disabled:opacity-50"
+                >
+                    {isPending ? "Recording..." : "Record Payment"}
+                </button>
             </div>
         </form>
     );

@@ -1,27 +1,13 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
 import { createSchool, CreateSchoolState } from "@/lib/actions/school.actions";
 import { cn } from "@/lib/utils";
 
 const initialState: CreateSchoolState = { message: "", errors: {} };
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <button
-            type="submit"
-            disabled={pending}
-            className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
-        >
-            {pending ? "Creating..." : "Create School"}
-        </button>
-    );
-}
-
 export default function CreateSchoolForm() {
-    // @ts-ignore - useFormState type mismatch in some next versions, but safe here
-    const [state, formAction] = useFormState(createSchool, initialState);
+    const [state, formAction, isPending] = useActionState(createSchool, initialState);
 
     return (
         <form action={formAction} className="space-y-6 bg-white p-6 rounded shadow">
@@ -105,7 +91,13 @@ export default function CreateSchoolForm() {
             </div>
 
             <div className="flex justify-end">
-                <SubmitButton />
+                <button
+                    type="submit"
+                    disabled={isPending}
+                    className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                >
+                    {isPending ? "Creating..." : "Create School"}
+                </button>
             </div>
         </form>
     );

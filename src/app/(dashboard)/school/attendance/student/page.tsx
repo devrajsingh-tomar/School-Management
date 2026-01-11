@@ -59,8 +59,9 @@ export default function StudentAttendancePage() {
 
             // Pre-fill attendance: If record exists use it, else default to 'Present'
             const newAtt: Record<string, string> = {};
+            const attMap = attRecord as Record<string, string>;
             classStudents.forEach((s: any) => {
-                newAtt[s._id] = attRecord[s._id] || "Present";
+                newAtt[s._id] = attMap[s._id] || "Present";
             });
             setAttendance(newAtt);
             setIsLoading(false);
@@ -149,10 +150,10 @@ export default function StudentAttendancePage() {
                                                             key={status}
                                                             onClick={() => handleToggle(student._id, status)}
                                                             className={`px-3 py-1 rounded-full text-xs font-bold border transition ${attendance[student._id] === status
-                                                                    ? status === "Present" ? "bg-green-600 text-white border-green-600"
-                                                                        : status === "Absent" ? "bg-red-600 text-white border-red-600"
-                                                                            : "bg-indigo-600 text-white border-indigo-600"
-                                                                    : "bg-white text-gray-400 border-gray-200 hover:border-indigo-300"
+                                                                ? status === "Present" ? "bg-green-600 text-white border-green-600"
+                                                                    : status === "Absent" ? "bg-red-600 text-white border-red-600"
+                                                                        : "bg-indigo-600 text-white border-indigo-600"
+                                                                : "bg-white text-gray-400 border-gray-200 hover:border-indigo-300"
                                                                 }`}
                                                         >
                                                             {status.charAt(0)}

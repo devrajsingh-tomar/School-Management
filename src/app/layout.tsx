@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google"; // Optimized font
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
+import { Toaster } from "sonner";
+import { SessionProvider } from "next-auth/react";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "School Management SaaS",
-  description: "A comprehensive school management system",
+  description: "Modern school management platform",
 };
 
 export default function RootLayout({
@@ -16,9 +17,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className={cn("h-full bg-gray-50 antialiased", inter.variable)}>
-        {children}
+    <html lang="en">
+      <body className={inter.className}>
+        <SessionProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </SessionProvider>
       </body>
     </html>
   );

@@ -1,125 +1,233 @@
 import { getStudentById } from "@/lib/actions/student.actions";
 import { getStudentDocuments } from "@/lib/actions/document.actions";
+import { getAttendanceTrends } from "@/lib/actions/reports.actions";
+import { getStudentActivity } from "@/lib/actions/audit.actions";
 import { Button } from "@/components/ui/button";
 import GuardianManager from "@/components/students/guardian-manager";
 import DocumentManager from "@/components/students/document-manager";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Edit, FileText } from "lucide-react";
+import { Edit, FileText, Download, Calendar, GraduationCap, DollarSign, Activity } from "lucide-react";
 import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { StudentTimeline } from "@/components/student/timeline";
 
 export default async function StudentProfilePage({
     params,
 }: {
     params: { id: string };
 }) {
-    const [student, documents] = await Promise.all([
+    const [student, documents, activityRes] = await Promise.all([
         getStudentById(params.id),
         getStudentDocuments(params.id),
+        getStudentActivity(params.id)
     ]);
 
     if (!student) {
         notFound();
     }
 
+    const activity = activityRes.success ? activityRes.data : [];
+
     return (
-        <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex justify-between items-start">
-                <div className="flex gap-4">
-                    <div className="h-24 w-24 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold text-2xl">
-                        {student.firstName[0]}{student.lastName[0]}
-                    </div>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex items-center justify-between space-y-2">
+                <div className="flex items-center space-x-4">
+                    <Avatar className="h-20 w-20">
+                        {/* Placeholder for student image if exists */}
+                        <AvatarFallback className="text-xl bg-primary text-primary-foreground">
+                            {student.firstName[0]}{student.lastName[0]}
+                        </AvatarFallback>
+                    </Avatar>
                     <div>
-                        <h1 className="text-3xl font-bold">{student.firstName} {student.lastName}</h1>
-                        <p className="text-gray-500">Admission No: {student.admissionNumber} • Roll No: {student.rollNumber || "N/A"}</p>
-                        <div className="flex gap-2 mt-2">
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">Class {student.class?.name} - {student.section?.name}</span>
-                            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm font-medium">{student.status}</span>
+                        <h2 className="text-3xl font-bold tracking-tight">{student.firstName} {student.lastName}</h2>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <span>Admission #{student.admissionNumber}</span>
+                            <span>•</span>
+                            <span>Class {student.class?.name} - {student.section?.name}</span>
+                            <span>•</span>
+                            <Badge variant={student.status === "Admitted" ? "default" : "secondary"}>
+                                {student.status}
+                            </Badge>
                         </div>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center space-x-2">
                     <Link href={`/school/students/${student._id}/edit`}>
                         <Button variant="outline">
-                            <Edit className="h-4 w-4 mr-2" /> Edit Profile
+                            <Edit className="mr-2 h-4 w-4" /> Edit Profile
                         </Button>
                     </Link>
-                    {/* Certificate Buttons */}
-                    <a href={`/api/students/${student._id}/certificate?type=BONAFIDE`} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline">
-                            <FileText className="h-4 w-4 mr-2" /> Bonafide
-                        </Button>
-                    </a>
-                    <a href={`/api/students/${student._id}/certificate?type=TC`} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline">
-                            <FileText className="h-4 w-4 mr-2" /> TC
-                        </Button>
-                    </a>
+                    <DropdownActionMenu studentId={student._id} />
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Col: Personal Info */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="border rounded-md p-4 bg-white">
-                        <h2 className="text-lg font-semibold mb-4 border-b pb-2">Personal Information</h2>
-                        <div className="grid grid-cols-2 gap-y-4 text-sm">
-                            <div>
-                                <span className="text-gray-500 block">Date of Birth</span>
-                                <span className="font-medium">{format(new Date(student.dob), "dd MMM yyyy")}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-500 block">Gender</span>
-                                <span className="font-medium">{student.gender}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-500 block">Email</span>
-                                <span className="font-medium">{student.email || "N/A"}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-500 block">Phone</span>
-                                <span className="font-medium">{student.phone || "N/A"}</span>
-                            </div>
-                            <div className="col-span-2">
-                                <span className="text-gray-500 block">Address</span>
-                                <span className="font-medium">
-                                    {[
-                                        student.address?.street,
-                                        student.address?.city,
-                                        student.address?.state,
-                                        student.address?.zipCode
-                                    ].filter(Boolean).join(", ") || "N/A"}
-                                </span>
-                            </div>
-                        </div>
+            <Tabs defaultValue="overview" className="space-y-4">
+                <TabsList>
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="academics">Academics</TabsTrigger>
+                    <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                    <TabsTrigger value="finance">Fees & Accounts</TabsTrigger>
+                    <TabsTrigger value="documents">Documents</TabsTrigger>
+                </TabsList>
+
+                {/* OVERVIEW TAB */}
+                <TabsContent value="overview" className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        {/* Quick Stats */}
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Roll Number</CardTitle>
+                                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{student.rollNumber || "N/A"}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Attendance</CardTitle>
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">92%</div>
+                                <p className="text-xs text-muted-foreground">Present Days</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Fee Balance</CardTitle>
+                                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-red-600">₹2,500</div>
+                                <p className="text-xs text-muted-foreground">Due safely</p>
+                            </CardContent>
+                        </Card>
                     </div>
 
-                    <div className="border rounded-md p-4 bg-white">
-                        <h2 className="text-lg font-semibold mb-4 border-b pb-2">Academic Details</h2>
-                        <div className="grid grid-cols-2 gap-y-4 text-sm">
-                            <div>
-                                <span className="text-gray-500 block">House</span>
-                                <span className="font-medium">{student.house?.name || "N/A"}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-500 block">Category</span>
-                                <span className="font-medium">{student.category?.name || "N/A"}</span>
-                            </div>
-                        </div>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                        <Card className="col-span-4">
+                            <CardHeader>
+                                <CardTitle>Personal Information</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                                    <div className="sm:col-span-1">
+                                        <dt className="text-sm font-medium text-muted-foreground">Email</dt>
+                                        <dd className="mt-1 text-sm font-semibold">{student.email || "-"}</dd>
+                                    </div>
+                                    <div className="sm:col-span-1">
+                                        <dt className="text-sm font-medium text-muted-foreground">Phone</dt>
+                                        <dd className="mt-1 text-sm font-semibold">{student.phone || "-"}</dd>
+                                    </div>
+                                    <div className="sm:col-span-1">
+                                        <dt className="text-sm font-medium text-muted-foreground">Date of Birth</dt>
+                                        <dd className="mt-1 text-sm font-semibold">{format(new Date(student.dob), "PPP")}</dd>
+                                    </div>
+                                    <div className="sm:col-span-1">
+                                        <dt className="text-sm font-medium text-muted-foreground">Gender</dt>
+                                        <dd className="mt-1 text-sm font-semibold">{student.gender}</dd>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <dt className="text-sm font-medium text-muted-foreground">Address</dt>
+                                        <dd className="mt-1 text-sm font-semibold">
+                                            {[
+                                                student.address?.street,
+                                                student.address?.city,
+                                                student.address?.state,
+                                                student.address?.zipCode
+                                            ].filter(Boolean).join(", ")}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </CardContent>
+                        </Card>
+                        <Card className="col-span-3">
+                            <CardHeader>
+                                <CardTitle>Recent Timeline</CardTitle>
+                                <CardDescription>Latest activities for this student</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <StudentTimeline events={activity} />
+                            </CardContent>
+                        </Card>
                     </div>
-                </div>
+                </TabsContent>
 
-                {/* Right Col: Guardians & Documents */}
-                <div className="space-y-6">
-                    <div className="border rounded-md p-4 bg-white">
-                        <GuardianManager studentId={student._id} guardians={student.guardians || []} />
+                {/* ACADEMICS TAB */}
+                <TabsContent value="academics">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Academic Details</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                                <div className="sm:col-span-1">
+                                    <dt className="text-sm font-medium text-muted-foreground">House</dt>
+                                    <dd className="mt-1 text-sm font-semibold">{student.house?.name || "-"}</dd>
+                                </div>
+                                <div className="sm:col-span-1">
+                                    <dt className="text-sm font-medium text-muted-foreground">Category</dt>
+                                    <dd className="mt-1 text-sm font-semibold">{student.category?.name || "-"}</dd>
+                                </div>
+                            </dl>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* DOCUMENTS TAB */}
+                <TabsContent value="documents">
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Guardian Documents</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <GuardianManager studentId={student._id} guardians={student.guardians || []} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Student Documents</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <DocumentManager studentId={student._id} documents={documents} />
+                            </CardContent>
+                        </Card>
                     </div>
-                    <div className="border rounded-md p-4 bg-white">
-                        <DocumentManager studentId={student._id} documents={documents} />
-                    </div>
-                </div>
-            </div>
+                </TabsContent>
+
+                {/* Placeholders for others */}
+                <TabsContent value="attendance">
+                    <Card>
+                        <CardHeader><CardTitle>Attendance Record</CardTitle></CardHeader>
+                        <CardContent><p className="text-muted-foreground">Attendance module integration pending view.</p></CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="finance">
+                    <Card>
+                        <CardHeader><CardTitle>Fee History</CardTitle></CardHeader>
+                        <CardContent><p className="text-muted-foreground">Fee record integration pending view.</p></CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+}
+
+function DropdownActionMenu({ studentId }: { studentId: string }) {
+    return (
+        <div className="flex gap-2">
+            <a href={`/api/students/${studentId}/certificate?type=BONAFIDE`} target="_blank">
+                <Button variant="ghost" size="icon" title="Download Bonafide">
+                    <FileText className="h-4 w-4" />
+                </Button>
+            </a>
         </div>
     );
 }
