@@ -4,6 +4,9 @@ import Enquiry from "@/lib/db/models/Enquiry";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { format } from "date-fns";
 
+export const dynamic = "force-dynamic";
+
+
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
