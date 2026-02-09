@@ -5,6 +5,8 @@ import Exam from "@/lib/db/models/Exam";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import mongoose from "mongoose";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ resultId: string }> }
