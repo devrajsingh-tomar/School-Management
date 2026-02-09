@@ -52,3 +52,11 @@ git push origin main
 -   **MongoDB Connection Error**: Double-check Step 1 (Network Access).
 -   **404 on API Routes**: Ensure your file structure in `src/app/api` is correct.
 -   **Build Failures**: Check the "Build Logs" in Vercel for TypeScript errors (we fixed most of them locally).
+-   **Git Push Errors (Permission Denied)**:
+    -   If you see `Permission to ... denied to ...`, it means you are logged into a GitHub account that does not own the repository you are pushing to.
+    -   **Solution 1 (Change Repo)**: Create a new repository on *your* GitHub account, then point `origin` to it:
+        ```bash
+        git remote set-url origin https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git
+        git push -u origin main
+        ```
+    -   **Solution 2 (Authenticate)**: If the repo belongs to you but under a different username, ensure you are logged in correctly using [GitHub CLI](https://cli.github.com/) (`gh auth login`) or a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
