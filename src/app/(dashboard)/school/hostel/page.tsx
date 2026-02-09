@@ -9,7 +9,7 @@ import { RoomGrid } from "@/components/hostel/room-grid";
 import { AllocationForm } from "@/components/forms/allocation-form";
 import { getHostels, getAllocations } from "@/lib/actions/hostel.actions";
 import { getStudents } from "@/lib/actions/student.actions";
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 import {
     Table,
     TableBody,

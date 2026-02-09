@@ -3,6 +3,7 @@ import CreateSessionForm from "@/components/forms/create-session-form";
 import CreateHouseForm from "@/components/forms/create-house-form";
 import CreateCategoryForm from "@/components/forms/create-category-form";
 import { getSessions, getHouses, getCategories } from "@/lib/actions/master.actions";
+import { format } from "date-fns";
 
 export default async function SchoolSetupPage() {
     const sessions = await getSessions();
@@ -28,7 +29,7 @@ export default async function SchoolSetupPage() {
                             <li key={s._id} className="py-2 flex justify-between items-center">
                                 <div>
                                     <p className="font-medium text-gray-900">{s.name}</p>
-                                    <p className="text-xs text-gray-500">{new Date(s.startDate).toLocaleDateString()} - {new Date(s.endDate).toLocaleDateString()}</p>
+                                    <p className="text-xs text-gray-500">{format(new Date(s.startDate), "dd/MM/yyyy")} - {format(new Date(s.endDate), "dd/MM/yyyy")}</p>
                                 </div>
                                 {s.isCurrent && <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">Current</span>}
                             </li>

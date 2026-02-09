@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { getSchoolUsers } from "@/lib/actions/user.actions";
-import { markClassAttendance, getAttendanceByDate } from "@/lib/actions/attendance.actions"; // Reuse the mark action but handle staff
 import { Loader2, Save, Calendar, UserCheck } from "lucide-react";
 import { markStaffAttendance, getStaffAttendanceByDate } from "@/lib/actions/attendance.actions";
 
@@ -101,10 +100,10 @@ export default function StaffAttendancePage() {
                                                     key={status}
                                                     onClick={() => handleToggle(s._id, status)}
                                                     className={`px-4 py-1 rounded-full text-xs font-bold border transition ${attendance[s._id] === status
-                                                            ? status === "Present" ? "bg-green-600 text-white border-green-600"
-                                                                : status === "Absent" ? "bg-red-600 text-white border-red-600"
-                                                                    : "bg-indigo-600 text-white border-indigo-600"
-                                                            : "bg-white text-gray-400 border-gray-200 hover:border-indigo-300"
+                                                        ? status === "Present" ? "bg-green-600 text-white border-green-600"
+                                                            : status === "Absent" ? "bg-red-600 text-white border-red-600"
+                                                                : "bg-indigo-600 text-white border-indigo-600"
+                                                        : "bg-white text-gray-400 border-gray-200 hover:border-indigo-300"
                                                         }`}
                                                 >
                                                     {status}

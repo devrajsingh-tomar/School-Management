@@ -2,75 +2,191 @@
 
 import { auth } from "@/auth";
 import connectDB from "@/lib/db/connect";
-import Student, { IStudent } from "@/lib/db/models/Student";
-import Guardian from "@/lib/db/models/Guardian";
-import AuditLog from "@/lib/db/models/AuditLog";
+import Student from "@/lib/db/models/Student";
+import User from "@/lib/db/models/User";
+import { logAction } from "@/lib/actions/audit.actions";
 import { studentSchema, studentUpdateSchema } from "@/lib/validators/student";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import mongoose from "mongoose";
+import { ActionState } from "@/lib/types/actions";
+import bcrypt from "bcryptjs";
+import { sendCredentials } from "@/lib/services/credential-service";
 
-export async function createStudent(data: z.infer<typeof studentSchema>) {
+export async function createStudent(data: z.infer<typeof studentSchema>): Promise<ActionState<any>> {
     const session = await auth();
     if (!session || !session.user || !session.user.schoolId) {
-        throw new Error("Unauthorized");
+        return { success: false, data: null, message: "Unauthorized" };
     }
 
-    const validated = studentSchema.parse(data);
+    const validated = studentSchema.safeParse(data);
+    if (!validated.success) {
+        return { success: false, data: null, message: "Validation Failed", errors: validated.error.flatten().fieldErrors };
+    }
 
     await connectDB();
 
-    // Check admission number uniqueness
-    const existing = await Student.findOne({
-        school: session.user.schoolId,
-        admissionNumber: validated.admissionNumber,
-    });
-    if (existing) {
-        throw new Error("Admission number already exists");
+    // Auto-generate admission number if not provided
+    let admissionNumber = validated.data.admissionNumber;
+    if (!admissionNumber) {
+        const year = new Date().getFullYear();
+        const count = await Student.countDocuments({ school: session.user.schoolId });
+        admissionNumber = `ADM${year}${String(count + 1).padStart(4, '0')}`;
+
+        // Ensure uniqueness
+        let counter = 1;
+        while (await Student.findOne({ school: session.user.schoolId, admissionNumber })) {
+            admissionNumber = `ADM${year}${String(count + counter).padStart(4, '0')}`;
+            counter++;
+        }
+    } else {
+        // Only check uniqueness if admission number was manually provided
+        const existing = await Student.findOne({
+            school: session.user.schoolId,
+            admissionNumber: admissionNumber,
+        });
+        if (existing) {
+            return { success: false, data: null, message: "Admission number already exists" };
+        }
     }
 
-    const student = await Student.create({
-        ...validated,
-        school: session.user.schoolId,
-    });
+    try {
+        const student = await Student.create({
+            ...validated.data,
+            admissionNumber, // Use the generated or provided admission number
+            school: session.user.schoolId,
+        });
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "CREATE_STUDENT",
-        target: student._id.toString(),
-        details: { name: `${student.firstName} ${student.lastName}` },
-    });
+        // Handle Portal Access Creation
+        if (validated.data.createPortalAccess) {
+            const password = validated.data.loginPassword || "123456";
+            const hashedPassword = await bcrypt.hash(password, 10);
 
-    revalidatePath("/school/students");
-    return JSON.parse(JSON.stringify(student));
+            // 1. Create Student User Account
+            const studentIdentifier = validated.data.email || validated.data.phone || `${admissionNumber}@student.school`;
+
+            await User.findOneAndUpdate(
+                {
+                    $or: [
+                        { email: validated.data.email ? validated.data.email : "__NOT_PROVIDED__" },
+                        { phone: validated.data.phone ? validated.data.phone : "__NOT_PROVIDED__" },
+                        { name: `${student.firstName} ${student.lastName}`, school: session.user.schoolId, role: "STUDENT" }
+                    ]
+                },
+                {
+                    school: session.user.schoolId,
+                    name: `${student.firstName} ${student.lastName}`,
+                    email: validated.data.email,
+                    phone: validated.data.phone,
+                    passwordHash: hashedPassword,
+                    role: "STUDENT",
+                    linkedStudentId: student._id,
+                    isActive: true
+                },
+                { upsert: true, new: true }
+            );
+
+            // 2. Create Parent User Account
+            // For parent, we use a distinct identifier to prevent collision with student email/phone
+            const parentEmail = validated.data.email ? `p_${validated.data.email}` : undefined;
+            const parentPhone = validated.data.phone; // Might be same, but role is different
+
+            await User.findOneAndUpdate(
+                {
+                    $or: [
+                        { email: parentEmail ? parentEmail : "__NOT_PROVIDED__" },
+                        { name: `Parent of ${student.firstName}`, school: session.user.schoolId, role: "PARENT" }
+                    ]
+                },
+                {
+                    school: session.user.schoolId,
+                    name: `Parent of ${student.firstName}`,
+                    email: parentEmail,
+                    phone: parentPhone,
+                    passwordHash: hashedPassword,
+                    role: "PARENT",
+                    linkedStudentId: student._id,
+                    isActive: true
+                },
+                { upsert: true, new: true }
+            );
+
+            const parentIdentifier = parentEmail || parentPhone || `p_${student.admissionNumber}`;
+
+            // TODO: In production, trigger Email/SMS notification here.
+            console.log(`PROD LOG: Credentials created for Student/Parent. Identifier: ${studentIdentifier}, Password: ${password}`);
+
+            // Send to Student
+            await sendCredentials({
+                name: `${student.firstName} ${student.lastName}`,
+                identifier: studentIdentifier,
+                password: password,
+                role: "STUDENT",
+                email: validated.data.email,
+                phone: validated.data.phone,
+                channel: validated.data.email ? "EMAIL" : "SMS"
+            });
+
+            // Send to Parent
+            await sendCredentials({
+                name: `Parent of ${student.firstName}`,
+                identifier: parentIdentifier,
+                password: password,
+                role: "PARENT",
+                email: validated.data.email ? `p_${validated.data.email}` : undefined,
+                channel: validated.data.email ? "EMAIL" : "WHATSAPP"
+            });
+        }
+
+        await logAction(
+            session.user.id,
+            "CREATE_STUDENT",
+            "STUDENT",
+            { name: `${student.firstName} ${student.lastName}`, id: student._id, portalAccess: !!validated.data.createPortalAccess },
+            session.user.schoolId
+        );
+
+        revalidatePath("/school/students");
+        return { success: true, data: JSON.parse(JSON.stringify(student)), message: "Student Created" };
+    } catch (error: any) {
+        console.error(error);
+        return { success: false, data: null, message: error.message || "Database Error" };
+    }
 }
 
-export async function updateStudent(id: string, data: z.infer<typeof studentUpdateSchema>) {
+export async function updateStudent(id: string, data: z.infer<typeof studentUpdateSchema>): Promise<ActionState<any>> {
     const session = await auth();
     if (!session || !session.user || !session.user.schoolId) {
-        throw new Error("Unauthorized");
+        return { success: false, data: null, message: "Unauthorized" };
     }
 
-    const validated = studentUpdateSchema.parse(data);
+    const validated = studentUpdateSchema.safeParse(data);
+    if (!validated.success) {
+        return { success: false, data: null, message: "Validation Failed", errors: validated.error.flatten().fieldErrors };
+    }
+
     await connectDB();
 
-    const student = await Student.findOne({ _id: id, school: session.user.schoolId });
-    if (!student) throw new Error("Student not found");
+    try {
+        const student = await Student.findOne({ _id: id, school: session.user.schoolId });
+        if (!student) return { success: false, data: null, message: "Student not found" };
 
-    const updated = await Student.findByIdAndUpdate(id, validated, { new: true });
+        const updated = await Student.findByIdAndUpdate(id, validated.data, { new: true });
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "UPDATE_STUDENT",
-        target: id,
-        details: { changes: validated },
-    });
+        await logAction(
+            session.user.id,
+            "UPDATE_STUDENT",
+            "STUDENT",
+            { id, changes: validated.data },
+            session.user.schoolId
+        );
 
-    revalidatePath("/school/students");
-    revalidatePath(`/school/students/${id}`);
-    return JSON.parse(JSON.stringify(updated));
+        revalidatePath("/school/students");
+        revalidatePath(`/school/students/${id}`);
+        return { success: true, data: JSON.parse(JSON.stringify(updated)), message: "Student Updated" };
+    } catch (error: any) {
+        console.error(error);
+        return { success: false, data: null, message: error.message || "Database Error" };
+    }
 }
 
 export async function getStudents(query: {
@@ -148,54 +264,53 @@ export async function getStudentById(id: string) {
     return JSON.parse(JSON.stringify(student));
 }
 
-export async function deleteStudent(id: string) {
+export async function deleteStudent(id: string): Promise<ActionState<null>> {
     const session = await auth();
     if (!session || !session.user || !session.user.schoolId) {
-        throw new Error("Unauthorized");
+        return { success: false, data: null, message: "Unauthorized" };
     }
 
     await connectDB();
     const student = await Student.findOneAndDelete({ _id: id, school: session.user.schoolId });
-    if (!student) throw new Error("Student not found");
+    if (!student) return { success: false, data: null, message: "Student not found" };
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "DELETE_STUDENT",
-        target: id,
-        details: { name: `${student.firstName} ${student.lastName}` },
-    });
+    await logAction(
+        session.user.id,
+        "DELETE_STUDENT",
+        "STUDENT",
+        { id, name: `${student.firstName} ${student.lastName}` },
+        session.user.schoolId
+    );
 
     revalidatePath("/school/students");
-    return { success: true };
+    return { success: true, data: null, message: "Student Deleted" };
 }
 
-export async function addGuardianToStudent(studentId: string, guardianId: string) {
+export async function addGuardianToStudent(studentId: string, guardianId: string): Promise<ActionState<null>> {
     const session = await auth();
-    if (!session || !session.user || !session.user.schoolId) throw new Error("Unauthorized");
+    if (!session || !session.user || !session.user.schoolId) return { success: false, data: null, message: "Unauthorized" };
 
     await connectDB();
 
-    // Update Student to add Guardian ID
     await Student.findByIdAndUpdate(studentId, {
         $addToSet: { guardians: guardianId }
     });
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "LINK_GUARDIAN",
-        target: studentId,
-        details: { guardianId },
-    });
+    await logAction(
+        session.user.id,
+        "LINK_GUARDIAN",
+        "STUDENT",
+        { studentId, guardianId },
+        session.user.schoolId
+    );
 
     revalidatePath(`/school/students/${studentId}`);
-    return { success: true };
+    return { success: true, data: null, message: "Guardian Linked" };
 }
 
-export async function removeGuardianFromStudent(studentId: string, guardianId: string) {
+export async function removeGuardianFromStudent(studentId: string, guardianId: string): Promise<ActionState<null>> {
     const session = await auth();
-    if (!session || !session.user || !session.user.schoolId) throw new Error("Unauthorized");
+    if (!session || !session.user || !session.user.schoolId) return { success: false, data: null, message: "Unauthorized" };
 
     await connectDB();
 
@@ -203,14 +318,14 @@ export async function removeGuardianFromStudent(studentId: string, guardianId: s
         $pull: { guardians: guardianId }
     });
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "UNLINK_GUARDIAN",
-        target: studentId,
-        details: { guardianId },
-    });
+    await logAction(
+        session.user.id,
+        "UNLINK_GUARDIAN",
+        "STUDENT",
+        { studentId, guardianId },
+        session.user.schoolId
+    );
 
     revalidatePath(`/school/students/${studentId}`);
-    return { success: true };
+    return { success: true, data: null, message: "Guardian Unlinked" };
 }

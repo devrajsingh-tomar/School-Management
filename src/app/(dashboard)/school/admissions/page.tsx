@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { getEnquiries } from "@/lib/actions/enquiry.actions";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 import Link from "next/link";
 import {
     Users,
@@ -32,6 +34,12 @@ export default async function AdmissionsPage() {
                     <button className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition flex items-center gap-2">
                         <UserPlus size={18} />
                         New Enquiry
+                    </button>
+                </Link>
+                <Link href="/school/admissions/pipeline" className="ml-2">
+                    <button className="bg-white border text-indigo-600 px-4 py-2 rounded-md hover:bg-gray-50 transition flex items-center gap-2">
+                        <FileText size={18} />
+                        Pipeline View
                     </button>
                 </Link>
             </div>
@@ -84,7 +92,7 @@ export default async function AdmissionsPage() {
                                     </div>
                                     <div>
                                         <div className="font-medium text-gray-900">{enquiry.studentName}</div>
-                                        <div className="text-sm text-gray-500">{enquiry.classAppliedFor?.name} • {new Date(enquiry.createdAt).toLocaleDateString()}</div>
+                                        <div className="text-sm text-gray-500">{enquiry.classAppliedFor?.name} • {format(new Date(enquiry.createdAt), "dd/MM/yyyy")}</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">

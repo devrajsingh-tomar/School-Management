@@ -28,7 +28,7 @@ import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 const formSchema = z.object({
     itemId: z.string().min(1, "Select an item"),
     type: z.enum(["IN", "OUT"]),
-    quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
+    quantity: z.number().min(1, "Quantity must be at least 1"),
     reference: z.string().optional(),
 });
 
@@ -144,7 +144,12 @@ export function StockAdjustmentForm({
                             <FormItem>
                                 <FormLabel>Quantity</FormLabel>
                                 <FormControl>
-                                    <Input type="number" min="1" {...field} />
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        {...field}
+                                        onChange={e => field.onChange(Number(e.target.value))}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

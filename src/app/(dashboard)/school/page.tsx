@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getDashboardStats, getAttendanceTrends } from "@/lib/actions/reports.actions";
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 import { AttendanceChart } from "@/components/reports/charts";
 import { Users, GraduationCap, DollarSign, CalendarCheck } from "lucide-react";
 import Link from "next/link";
@@ -19,7 +19,7 @@ export default async function DashboardPage() {
         getAttendanceTrends(session.user.schoolId)
     ]);
 
-    const stats = statsRes.success ? statsRes.data : { studentCount: 0, teacherCount: 0 };
+    const stats = statsRes.success && statsRes.data ? statsRes.data : { studentCount: 0, teacherCount: 0 };
     const attendanceData = attendanceRes.success ? attendanceRes.data : [];
 
     return (

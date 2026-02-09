@@ -1,6 +1,6 @@
 "use server";
 
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 import Book from "@/lib/db/models/Book";
 import LibraryTransaction from "@/lib/db/models/LibraryTransaction";
 import User from "@/lib/db/models/User";

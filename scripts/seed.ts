@@ -1,11 +1,11 @@
-import dotenv from "dotenv";
+const dotenv = require("dotenv");
 dotenv.config({ path: ".env.local" });
 
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
-import User from "../src/lib/db/models/User";
-import School from "../src/lib/db/models/School";
-import connectDB from "../src/lib/db/connect";
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const User = require("../src/lib/db/models/User").default;
+const School = require("../src/lib/db/models/School").default;
+const connectDB = require("../src/lib/db/connect").default;
 
 async function seed() {
     await connectDB();

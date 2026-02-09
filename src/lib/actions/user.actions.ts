@@ -6,7 +6,7 @@ import connectDB from "@/lib/db/connect";
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { logAudit } from "@/lib/actions/audit.actions";
+import { logAction } from "@/lib/actions/audit.actions";
 
 const createUserSchema = z.object({
     name: z.string().min(2),
@@ -31,12 +31,12 @@ export async function createUser(prevState: CreateUserState, formData: FormData)
     }
 
     const validatedFields = createUserSchema.safeParse({
-        name: formData.get("name"),
-        email: formData.get("email"),
-        password: formData.get("password"),
-        role: formData.get("role"),
-        classId: formData.get("classId"),
-        sectionId: formData.get("sectionId"),
+        name: formData.get("name") as string,
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
+        role: formData.get("role") as any,
+        classId: formData.get("classId")?.toString() || undefined,
+        sectionId: formData.get("sectionId")?.toString() || undefined,
     });
 
     if (!validatedFields.success) {
@@ -74,11 +74,13 @@ export async function createUser(prevState: CreateUserState, formData: FormData)
             section: sectionId || undefined,
         });
 
-        await logAudit({
-            action: "CREATE_USER",
-            target: email,
-            details: { role, schoolId: session.user.schoolId }
-        });
+        await logAction(
+            session.user.id,
+            "CREATE_USER",
+            "USER",
+            { role, schoolId: session.user.schoolId },
+            session.user.schoolId
+        );
 
     } catch (error) {
         console.error("Create User Error:", error);

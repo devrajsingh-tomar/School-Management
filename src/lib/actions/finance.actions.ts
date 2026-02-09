@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import FeeStructure, { IFeeStructure } from "@/lib/db/models/FeeStructure";
+import FeeStructure from "@/lib/db/models/FeeStructure";
 import FeePayment from "@/lib/db/models/FeePayment";
 import Student from "@/lib/db/models/Student";
 import connectDB from "@/lib/db/connect";
@@ -9,6 +9,7 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/actions/audit.actions";
 import mongoose from "mongoose";
+import { ActionState } from "@/lib/types/actions";
 
 // --- VALIDATORS ---
 
@@ -23,21 +24,29 @@ const createFeeSchema = z.object({
 
 // --- ACTIONS ---
 
-export async function createFeeStructure(formData: FormData) {
+export async function createFeeStructure(prevStateOrFormData: any, formData?: FormData): Promise<ActionState<null>> {
+    const data = (prevStateOrFormData instanceof FormData) ? prevStateOrFormData : formData;
+    if (!data) return { success: false, data: null, message: "Invalid Data" };
+
     const session = await auth();
-    if (!session?.user?.schoolId) return { message: "Unauthorized" };
+    if (!session?.user?.schoolId) return { success: false, data: null, message: "Unauthorized" };
 
     const validated = createFeeSchema.safeParse({
-        name: formData.get("name"),
-        classId: formData.get("classId"),
-        amount: formData.get("amount"),
-        type: formData.get("type"),
-        frequency: formData.get("frequency"),
-        dueDate: formData.get("dueDate"),
+        name: data.get("name"),
+        classId: data.get("classId"),
+        amount: data.get("amount"),
+        type: data.get("type"),
+        frequency: data.get("frequency"),
+        dueDate: data.get("dueDate"),
     });
 
     if (!validated.success) {
-        return { message: "Validation Failed: " + JSON.stringify(validated.error.flatten()) };
+        return {
+            success: false,
+            data: null,
+            message: "Validation Failed",
+            errors: validated.error.flatten().fieldErrors
+        };
     }
 
     await connectDB();
@@ -51,14 +60,14 @@ export async function createFeeStructure(formData: FormData) {
         });
 
         revalidatePath("/school/finance/structure");
-        return { message: "Fee Structure created successfully!" };
+        return { success: true, data: null, message: "Fee Structure created successfully!" };
     } catch (error) {
         console.error(error);
-        return { message: "Database Error" };
+        return { success: false, data: null, message: "Database Error" };
     }
 }
 
-export async function getFeeStructures(classId?: string) {
+export async function getFeeStructures(classId?: string): Promise<any[]> {
     const session = await auth();
     if (!session?.user?.schoolId) return [];
 
@@ -74,7 +83,7 @@ export async function getFeeStructures(classId?: string) {
     return JSON.parse(JSON.stringify(fees));
 }
 
-export async function deleteFeeStructure(id: string) {
+export async function deleteFeeStructure(id: string): Promise<void> {
     const session = await auth();
     if (!session?.user?.schoolId) throw new Error("Unauthorized");
 
@@ -85,7 +94,7 @@ export async function deleteFeeStructure(id: string) {
 
 // --- CORE LOGIC: DUE CALCULATION ---
 
-export async function calculateStudentDues(studentId: string) {
+export async function calculateStudentDues(studentId: string): Promise<any> {
     const session = await auth();
     if (!session?.user?.schoolId) throw new Error("Unauthorized");
 
@@ -100,7 +109,7 @@ export async function calculateStudentDues(studentId: string) {
         class: student.class
     }).lean();
 
-    // 2. Check Sibling Discount (Logic: If same guardian has > 1 child approx)
+    // 2. Check Sibling Discount
     let siblingDiscount = 0;
     if (student.guardians && student.guardians.length > 0) {
         // Find other students with same FIRST guardian
@@ -112,7 +121,7 @@ export async function calculateStudentDues(studentId: string) {
         });
 
         if (siblings > 0) {
-            siblingDiscount = 10; // 10% Flat for now. Could be dynamic.
+            siblingDiscount = 10;
         }
     }
 
@@ -124,7 +133,6 @@ export async function calculateStudentDues(studentId: string) {
         let payable = fee.amount;
         let discount = 0;
 
-        // Apply discount only on TUITION fees?
         if (fee.type === "Tuition" && siblingDiscount > 0) {
             discount = (payable * siblingDiscount) / 100;
             payable -= discount;
@@ -142,12 +150,7 @@ export async function calculateStudentDues(studentId: string) {
 
     // --- TRANSPORT FEE INTEGRATION ---
     if (student.transportRoute) {
-        // Need to populate or fetch separately since lean() on student didn't include it fully if it was just ObjectId
-        // But Populate in findById is easiest.
-        // Re-fetching or assuming I update the findById above.
-        // Let's do a quick separate fetch if not populated to avoid breaking existing signatures if I changed it.
-        // Actually, I can just fetch the Route.
-        const TransportRouteModel = mongoose.models.TransportRoute; // Lazy require to avoid circular diffs if any
+        const TransportRouteModel = mongoose.models.TransportRoute;
         if (TransportRouteModel) {
             const route = await TransportRouteModel.findById(student.transportRoute);
             if (route) {
@@ -157,7 +160,7 @@ export async function calculateStudentDues(studentId: string) {
                     type: "Transport",
                     amount: route.monthlyCost,
                     frequency: "Monthly",
-                    dueDate: new Date(), // Current due
+                    dueDate: new Date(),
                     discountApplied: 0,
                     finalAmount: route.monthlyCost
                 };
@@ -194,6 +197,37 @@ export async function calculateStudentDues(studentId: string) {
     };
 }
 
+export async function getStudentFees(studentId: string, schoolId: string): Promise<any> {
+    console.log("STUDENT PORTAL QUERY: getStudentFees", { schoolId, studentId });
+    await connectDB();
+
+    if (!mongoose.Types.ObjectId.isValid(studentId) || !mongoose.Types.ObjectId.isValid(schoolId)) {
+        console.error("Invalid IDs provided to getStudentFees", { studentId, schoolId });
+        return {
+            student: {},
+            breakdown: [],
+            summary: { netPayable: 0, totalPaid: 0, balanceDue: 0 },
+            history: []
+        };
+    }
+
+    try {
+        // Reuse the complex calculation logic
+        // Verify session schoolId matches provided schoolId if needed, but calculateStudentDues uses session schoolId
+        // We assume session.user.schoolId is correct for the logged in student
+        const data = await calculateStudentDues(studentId);
+        return JSON.parse(JSON.stringify(data));
+    } catch (error) {
+        console.error("Error calculating student fees:", error);
+        return {
+            student: {},
+            breakdown: [],
+            summary: { netPayable: 0, totalPaid: 0, balanceDue: 0 },
+            history: []
+        };
+    }
+}
+
 // --- PAYMENT COLLECTION ---
 
 export async function collectFee(data: {
@@ -202,13 +236,12 @@ export async function collectFee(data: {
     method: string;
     remarks?: string;
     paidBy?: string;
-}) {
+}): Promise<any> {
     const session = await auth();
     if (!session?.user?.schoolId) throw new Error("Unauthorized");
 
     await connectDB();
 
-    // Generate Verification or Receipt Code
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const count = await FeePayment.countDocuments({
         school: session.user.schoolId,
@@ -243,9 +276,7 @@ export async function collectFee(data: {
     return JSON.parse(JSON.stringify(payment));
 }
 
-// --- STATS ---
-
-export async function getFinanceStats() {
+export async function getFinanceStats(): Promise<any> {
     const session = await auth();
     if (!session?.user?.schoolId) throw new Error("Unauthorized");
 
@@ -255,19 +286,16 @@ export async function getFinanceStats() {
 
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    // 1. Today's Collection
     const todayCollection = await FeePayment.aggregate([
         { $match: { school: new mongoose.Types.ObjectId(session.user.schoolId), date: { $gte: today } } },
         { $group: { _id: null, total: { $sum: "$amountPaid" } } }
     ]);
 
-    // 2. Month's Collection
     const monthCollection = await FeePayment.aggregate([
         { $match: { school: new mongoose.Types.ObjectId(session.user.schoolId), date: { $gte: monthStart } } },
         { $group: { _id: null, total: { $sum: "$amountPaid" } } }
     ]);
 
-    // 3. Recent Transactions
     const recent = await FeePayment.find({ school: session.user.schoolId })
         .populate("student", "firstName lastName admissionNumber")
         .sort({ createdAt: -1 })
@@ -281,25 +309,20 @@ export async function getFinanceStats() {
     };
 }
 
-// --- WAIVER ---
-
 export async function waiveFee(data: {
     studentId: string;
     amount: number;
     reason: string;
-}) {
+}): Promise<any> {
     const session = await auth();
     if (!session?.user?.schoolId) throw new Error("Unauthorized");
 
-    // Check Permission (Mock: Only SCHOOL_ADMIN can waive for now as per schema roles)
-    // Assuming role check logic for "Fee Waive" permission
     if (session.user.role !== "SCHOOL_ADMIN" && session.user.role !== "SUPER_ADMIN") {
         throw new Error("Permission Denied: Only School Admin can waive fees.");
     }
 
     await connectDB();
 
-    // Generate Waiver Receipt Code
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const count = await FeePayment.countDocuments({
         school: session.user.schoolId,
@@ -336,16 +359,16 @@ export async function waiveFee(data: {
 
 // --- WRAPPER FOR FORM ACTIONS ---
 
-export async function recordPayment(_prevState: any, formData: FormData) {
+export async function recordPayment(_prevState: any, formData: FormData): Promise<ActionState<null>> {
     const session = await auth();
-    if (!session?.user?.schoolId) return { message: "Unauthorized" };
+    if (!session?.user?.schoolId) return { success: false, data: null, message: "Unauthorized" };
 
     const studentId = formData.get("studentId") as string;
     const feeId = formData.get("feeId") as string;
     const amountStr = formData.get("amount") as string;
 
     if (!studentId || !amountStr) {
-        return { message: "Missing required fields" };
+        return { success: false, data: null, message: "Missing required fields" };
     }
 
     try {
@@ -355,9 +378,9 @@ export async function recordPayment(_prevState: any, formData: FormData) {
             method: "Cash",
             remarks: `Fee Payment for ID: ${feeId || "General"}`
         });
-        return { message: "Payment Recorded Successfully" };
+        return { success: true, data: null, message: "Payment Recorded Successfully" };
     } catch (error: any) {
         console.error("Payment Error:", error);
-        return { message: error.message || "Failed to record payment" };
+        return { success: false, data: null, message: error.message || "Failed to record payment" };
     }
 }

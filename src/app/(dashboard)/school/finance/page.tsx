@@ -7,6 +7,7 @@ import {
     Plus,
     DollarSign
 } from "lucide-react";
+import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,7 +85,7 @@ export default async function FinancePage() {
                                             {txn.student?.firstName} {txn.student?.lastName}
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            {new Date(txn.date).toLocaleDateString()} • {txn.method} • {txn.receiptNumber}
+                                            {format(new Date(txn.date), "dd/MM/yyyy")} • {txn.method} • {txn.receiptNumber}
                                         </p>
                                     </div>
                                     <div className="ml-auto font-medium">+₹ {txn.amountPaid.toLocaleString()}</div>

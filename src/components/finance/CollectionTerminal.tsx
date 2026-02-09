@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { calculateStudentDues, collectFee, waiveFee } from "@/lib/actions/finance.actions";
 import { Search, Calculator, CheckCircle, Loader2, Printer, ShieldAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 
 export default function CollectionTerminal() { // Renamed for clarity in imports if needed, essentially a Page internal component
     const [searchId, setSearchId] = useState("");
@@ -263,7 +264,7 @@ export default function CollectionTerminal() { // Renamed for clarity in imports
                                         ) : (
                                             duesData.history.map((pay: any) => (
                                                 <tr key={pay._id} className="border-b last:border-0 hover:bg-gray-50">
-                                                    <td className="py-2">{new Date(pay.date).toLocaleDateString()}</td>
+                                                    <td className="py-2">{format(new Date(pay.date), "dd/MM/yyyy")}</td>
                                                     <td className="py-2 font-medium">{pay.receiptNumber}</td>
                                                     <td className="py-2">{pay.method}</td>
                                                     <td className="py-2 text-right text-green-600 font-bold">₹ {pay.amountPaid}</td>

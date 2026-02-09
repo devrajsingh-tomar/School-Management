@@ -1,6 +1,6 @@
 "use server";
 
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 import Hostel from "@/lib/db/models/Hostel";
 import Room from "@/lib/db/models/Room";
 import HostelAllocation from "@/lib/db/models/HostelAllocation";

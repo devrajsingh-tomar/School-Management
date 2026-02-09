@@ -1,12 +1,14 @@
 
 import { auth } from "@/auth";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 import { getStudentResults } from "@/lib/actions/exam.actions";
 
 export default async function StudentResultsPage() {
     const session = await auth();
-    if (!session?.user) return null;
+    if (!session?.user?.schoolId) return null;
 
-    const results = await getStudentResults(session.user.id);
+    const results = await getStudentResults(session.user.id, session.user.schoolId);
 
     return (
         <div className="space-y-6">
@@ -21,7 +23,7 @@ export default async function StudentResultsPage() {
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h3 className="font-bold text-lg">{res.exam?.name}</h3>
-                                    <p className="text-sm text-gray-500">{new Date(res.exam?.date).toLocaleDateString()}</p>
+                                    <p className="text-sm text-gray-500">{format(new Date(res.exam?.date), "dd/MM/yyyy")}</p>
                                     <p className="text-sm mt-1">{res.exam?.subject?.name}</p>
                                 </div>
                                 <div className="text-right">

@@ -2,10 +2,11 @@
 
 import { auth } from "@/auth";
 import connectDB from "@/lib/db/connect";
-import Enquiry, { EnquiryStatus } from "@/lib/db/models/Enquiry";
-import Student, { StudentStatus } from "@/lib/db/models/Student";
+import Enquiry from "@/lib/db/models/Enquiry";
+import Student from "@/lib/db/models/Student";
+import { EnquiryStatus, StudentStatus } from "@/lib/types/enums";
 import Guardian from "@/lib/db/models/Guardian";
-import AuditLog from "@/lib/db/models/AuditLog";
+import { logAction } from "@/lib/actions/audit.actions";
 import { revalidatePath } from "next/cache";
 import mongoose from "mongoose";
 
@@ -23,15 +24,15 @@ export async function createEnquiry(data: any) {
         status: EnquiryStatus.NEW,
     });
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "CREATE_ENQUIRY",
-        target: enquiry._id.toString(),
-        details: { name: enquiry.studentName },
-    });
+    await logAction(
+        session.user.id,
+        "CREATE_ENQUIRY",
+        "ENQUIRY",
+        { name: enquiry.studentName, id: enquiry._id },
+        session.user.schoolId
+    );
 
-    revalidatePath("/admin/admissions/enquiries");
+    revalidatePath("/school/admissions/enquiries");
     return JSON.parse(JSON.stringify(enquiry));
 }
 
@@ -46,16 +47,16 @@ export async function updateEnquiry(id: string, data: any) {
 
     const updated = await Enquiry.findByIdAndUpdate(id, data, { new: true });
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "UPDATE_ENQUIRY",
-        target: id,
-        details: { changes: data },
-    });
+    await logAction(
+        session.user.id,
+        "UPDATE_ENQUIRY",
+        "ENQUIRY",
+        { id, changes: data },
+        session.user.schoolId
+    );
 
-    revalidatePath("/admin/admissions/enquiries");
-    revalidatePath(`/admin/admissions/enquiries/${id}`);
+    revalidatePath("/school/admissions/enquiries");
+    revalidatePath(`/school/admissions/enquiries/${id}`);
     return JSON.parse(JSON.stringify(updated));
 }
 
@@ -68,7 +69,7 @@ export async function deleteEnquiry(id: string) {
     const enquiry = await Enquiry.findOneAndDelete({ _id: id, school: session.user.schoolId });
     if (!enquiry) throw new Error("Enquiry not found");
 
-    revalidatePath("/admin/admissions/enquiries");
+    revalidatePath("/school/admissions/enquiries");
     return { success: true };
 }
 
@@ -224,15 +225,15 @@ export async function convertEnquiryToStudent(id: string, admissionNumber: strin
         await mongooseSession.commitTransaction();
         mongooseSession.endSession();
 
-        await AuditLog.create({
-            school: session.user.schoolId,
-            actor: session.user.id,
-            action: "CONVERT_ENQUIRY",
-            target: id,
-            details: { studentId: student._id.toString() },
-        });
+        await logAction(
+            session.user.id,
+            "CONVERT_ENQUIRY",
+            "ENQUIRY",
+            { id, studentId: student._id.toString() },
+            session.user.schoolId
+        );
 
-        revalidatePath("/admin/admissions/enquiries");
+        revalidatePath("/school/admissions/enquiries");
         return JSON.parse(JSON.stringify(student));
 
     } catch (error) {

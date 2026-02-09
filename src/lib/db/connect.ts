@@ -29,7 +29,19 @@ if (!cached) {
     cached = global.mongoose = { conn: null, promise: null };
 }
 
+import "@/lib/db/models/Class";
+import "@/lib/db/models/Exam";
+import "@/lib/db/models/Student";
+import "@/lib/db/models/Result";
+
 async function connectDB() {
+    mongoose.set("strictPopulate", false);
+
+    // Log registered models for debugging
+    if (process.env.NODE_ENV === "development") {
+        console.log("Registered Models:", mongoose.modelNames());
+    }
+
     if (cached!.conn) {
         return cached!.conn;
     }
@@ -39,7 +51,9 @@ async function connectDB() {
             bufferCommands: false,
         };
 
+        console.log("Connecting to MongoDB Atlas...");
         cached!.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+            console.log("MongoDB Connected Successfully");
             return mongoose;
         });
     }

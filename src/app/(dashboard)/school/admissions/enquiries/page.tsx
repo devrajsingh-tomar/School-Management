@@ -2,19 +2,24 @@ import { getEnquiries } from "@/lib/actions/enquiry.actions";
 import Link from "next/link";
 import { Search, Filter, Plus } from "lucide-react";
 import { redirect } from "next/navigation";
+import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
+import { EnquiryStatus } from "@/lib/types/enums";
+import { format } from "date-fns";
 
 export default async function EnquiriesListPage({
     searchParams,
 }: {
-    searchParams?: {
+    searchParams?: Promise<{
         query?: string;
         page?: string;
         status?: string;
-    };
+    }>;
 }) {
-    const query = searchParams?.query || "";
-    const page = Number(searchParams?.page) || 1;
-    const status = searchParams?.status || "";
+    const params = await searchParams;
+    const query = params?.query || "";
+    const page = Number(params?.page) || 1;
+    const status = params?.status || "";
 
     const { enquiries, total, pages } = await getEnquiries({
         page,
@@ -24,19 +29,20 @@ export default async function EnquiriesListPage({
     });
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Enquiries</h1>
-                    <p className="text-gray-500">Manage all student enquiries and applications.</p>
-                </div>
-                <Link href="/school/admissions/enquiries/new">
-                    <button className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition flex items-center gap-2">
-                        <Plus size={18} />
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <PageHeader
+                title="Enquiries"
+                description="Manage all student enquiries and applications"
+                showBackButton
+                autoBreadcrumb
+            >
+                <Button asChild>
+                    <Link href="/school/admissions/enquiries/new">
+                        <Plus className="mr-2 h-4 w-4" />
                         New Enquiry
-                    </button>
-                </Link>
-            </div>
+                    </Link>
+                </Button>
+            </PageHeader>
 
             {/* Filters */}
             <div className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row gap-4">
@@ -115,7 +121,7 @@ export default async function EnquiriesListPage({
                                         <StatusBadge status={enquiry.status} />
                                     </td>
                                     <td className="p-4 text-gray-500">
-                                        {new Date(enquiry.createdAt).toLocaleDateString()}
+                                        {format(new Date(enquiry.createdAt), "dd/MM/yyyy")}
                                     </td>
                                     <td className="p-4">
                                         <Link

@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { format } from "date-fns";
 import connectDB from "@/lib/db/connect";
 import FeePayment from "@/lib/db/models/FeePayment";
 import mongoose from "mongoose";
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
         const admissionNo = t.student?.admissionNumber || "N/A";
 
         return [
-            new Date(t.date).toLocaleDateString(),
+            format(new Date(t.date), "dd/MM/yyyy"),
             `"${t.receiptNumber}"`,
             `"${studentName}"`,
             `"${admissionNo}"`,

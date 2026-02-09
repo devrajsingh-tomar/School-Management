@@ -1,4 +1,5 @@
 import { getLeaves, updateLeaveStatus } from "@/lib/actions/attendance.actions";
+import { format } from "date-fns";
 import Link from "next/link";
 import { CheckCircle, XCircle, Clock } from "lucide-react";
 
@@ -42,9 +43,8 @@ export default async function LeavePage() {
                                         <div className="text-xs text-gray-500">{leave.applicantType}</div>
                                     </td>
                                     <td className="p-4">
-                                        {new Date(leave.startDate).toLocaleDateString()}
-                                        <span className="text-gray-400 mx-1">➜</span>
-                                        {new Date(leave.endDate).toLocaleDateString()}
+                                        {format(new Date(leave.startDate), "dd/MM/yyyy")} - <br />
+                                        {format(new Date(leave.endDate), "dd/MM/yyyy")}
                                     </td>
                                     <td className="p-4 text-gray-600 max-w-xs truncate">{leave.reason}</td>
                                     <td className="p-4">

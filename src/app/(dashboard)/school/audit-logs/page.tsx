@@ -2,7 +2,7 @@
 import { getAuditLogs } from "@/lib/actions/audit.actions";
 
 export default async function AuditLogsPage() {
-    const logs = await getAuditLogs();
+    const { data: logs } = await getAuditLogs();
 
     return (
         <div className="space-y-6">

@@ -1,12 +1,13 @@
 
 import { auth } from "@/auth";
 import { getStudentFees } from "@/lib/actions/finance.actions";
+import { format } from "date-fns";
 
 export default async function StudentFeesPage() {
     const session = await auth();
-    if (!session?.user) return null;
+    if (!session?.user?.schoolId) return null;
 
-    const data = await getStudentFees(session.user.id);
+    const data = await getStudentFees(session.user.id, session.user.schoolId);
     // Need classId to know which fees apply. 
     // Wait, User model has class/section. `session.user` might not have it unless I extended session callback.
     // I should check `auth.ts`. 
@@ -28,7 +29,7 @@ export default async function StudentFeesPage() {
                                 <li key={fee._id} className="py-4 flex justify-between items-center">
                                     <div>
                                         <p className="font-medium text-gray-900">{fee.name}</p>
-                                        <p className="text-sm text-gray-500">Due: {new Date(fee.dueDate).toLocaleDateString()}</p>
+                                        <p className="text-sm text-gray-500">Due: {format(new Date(fee.dueDate), "dd/MM/yyyy")}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-bold">${fee.amount}</p>

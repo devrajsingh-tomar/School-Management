@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import connectDB from "@/lib/db/connect";
 import StudentDocument from "@/lib/db/models/StudentDocument";
-import AuditLog from "@/lib/db/models/AuditLog";
+import { logAction } from "@/lib/actions/audit.actions";
 import { revalidatePath } from "next/cache";
 
 export async function createDocumentRecord(data: {
@@ -28,13 +28,13 @@ export async function createDocumentRecord(data: {
         uploadedBy: session.user.id,
     });
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "UPLOAD_DOCUMENT",
-        target: doc._id.toString(),
-        details: { fileName: data.name, studentId: data.studentId },
-    });
+    await logAction(
+        session.user.id,
+        "UPLOAD_DOCUMENT",
+        "DOCUMENT",
+        { fileName: data.name, studentId: data.studentId, docId: doc._id },
+        session.user.schoolId
+    );
 
     revalidatePath(`/school/students/${data.studentId}`);
     return JSON.parse(JSON.stringify(doc));
@@ -69,13 +69,13 @@ export async function deleteDocument(id: string) {
 
     if (!doc) throw new Error("Document not found");
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "DELETE_DOCUMENT",
-        target: id,
-        details: { fileName: doc.name },
-    });
+    await logAction(
+        session.user.id,
+        "DELETE_DOCUMENT",
+        "DOCUMENT",
+        { id, fileName: doc.name },
+        session.user.schoolId
+    );
 
     if (doc.student) {
         revalidatePath(`/school/students/${doc.student.toString()}`);

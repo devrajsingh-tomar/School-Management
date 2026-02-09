@@ -1,111 +1,41 @@
-"use client";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react"; // Client side signin
-import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-
-export default function LoginPage() {
-    const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-
-    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        setLoading(true);
-        setError(null);
-
-        const formData = new FormData(event.currentTarget);
-        const email = formData.get("email") as string;
-        const password = formData.get("password") as string;
-
-        try {
-            console.log('Login form submit', { email, password });
-            const result = await signIn("credentials", {
-                email,
-                password,
-                redirect: false,
-            });
-            console.log('signIn result', result);
-
-            if (result?.error) {
-                console.log('Login error from signIn', result.error);
-                setError("Invalid email or password");
-                setLoading(false);
-            } else {
-                console.log('Login successful, navigating to dashboard');
-                router.push("/dashboard");
-                router.refresh();
-            }
-        } catch (error) {
-            console.error(error);
-            setError("Something went wrong");
-            setLoading(false);
-        }
-    }
-
+export default function LoginSelectorPage() {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50">
-            <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-                        Sign in to your account
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        School Management System
-                    </p>
-                </div>
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="-space-y-px rounded-md shadow-sm">
-                        <div>
-                            <label htmlFor="email-address" className="sr-only">
-                                Email address
-                            </label>
-                            <input
-                                id="email-address"
-                                name="email"
-                                type="email"
-                                required
-                                className={cn(
-                                    "relative block w-full rounded-t-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6",
-                                    "px-3"
-                                )}
-                                placeholder="Email address"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="password" className="sr-only">
-                                Password
-                            </label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                required
-                                className={cn(
-                                    "relative block w-full rounded-b-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6",
-                                    "px-3"
-                                )}
-                                placeholder="Password"
-                            />
-                        </div>
-                    </div>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+            <Card className="w-full max-w-md shadow-sm border-slate-200">
+                <CardHeader className="text-center space-y-2 pb-8 pt-8">
+                    <h1 className="text-2xl font-bold text-slate-900">Welcome to EduFlow</h1>
+                    <p className="text-sm text-slate-500">Choose how you want to sign in</p>
+                </CardHeader>
 
-                    {error && (
-                        <div className="text-sm text-red-500 text-center">{error}</div>
-                    )}
+                <CardContent className="space-y-3 pb-8">
+                    <Button
+                        asChild
+                        className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-base font-semibold"
+                    >
+                        <Link href="/school/login">School / Staff Login</Link>
+                    </Button>
 
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+                    <Button
+                        asChild
+                        className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-base font-semibold"
+                    >
+                        <Link href="/portal/login">Student / Parent Login</Link>
+                    </Button>
+
+                    <div className="pt-4 text-center">
+                        <Link
+                            href="/superadmin/login"
+                            className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
                         >
-                            {loading ? "Signing in..." : "Sign in"}
-                        </button>
+                            SuperAdmin Login
+                        </Link>
                     </div>
-                </form>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

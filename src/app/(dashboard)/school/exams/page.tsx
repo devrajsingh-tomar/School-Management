@@ -1,6 +1,7 @@
 import { getExams } from "@/lib/actions/exam.actions";
 import Link from "next/link";
 import { Plus, Eye, Edit3, ClipboardList } from "lucide-react";
+import { format } from "date-fns";
 
 export default async function ExamsPage() {
     const exams = await getExams();
@@ -27,7 +28,7 @@ export default async function ExamsPage() {
                             <div>
                                 <h3 className="text-xl font-bold text-gray-800">{exam.name}</h3>
                                 <div className="text-sm text-gray-500 mt-1">
-                                    <span className="font-semibold text-gray-700">{exam.class?.name}</span> • {exam.type} • {new Date(exam.startDate).toLocaleDateString()}
+                                    <span className="font-semibold text-gray-700">{exam.class?.name}</span> • {exam.type} • {format(new Date(exam.startDate), "dd/MM/yyyy")}
                                 </div>
                                 <div className="flex flex-wrap gap-2 mt-2">
                                     {exam.subjects.map((sub: any, i: number) => (

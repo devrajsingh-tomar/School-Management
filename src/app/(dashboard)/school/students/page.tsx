@@ -27,12 +27,13 @@ import {
 export default async function StudentsPage({
     searchParams,
 }: {
-    searchParams: { page?: string; search?: string; status?: string; classId?: string };
+    searchParams: Promise<{ page?: string; search?: string; status?: string; classId?: string }>;
 }) {
-    const query = searchParams?.search || "";
-    const currentPage = Number(searchParams?.page) || 1;
-    const status = searchParams?.status || "";
-    const classId = searchParams?.classId || "";
+    const params = await searchParams;
+    const query = params?.search || "";
+    const currentPage = Number(params?.page) || 1;
+    const status = params?.status || "";
+    const classId = params?.classId || "";
 
     const [data, classes] = await Promise.all([
         getStudents({

@@ -3,18 +3,22 @@ import connectDB from "@/lib/db/connect";
 import FeePayment from "@/lib/db/models/FeePayment";
 import Link from "next/link";
 import { ArrowLeft, Download, FileText } from "lucide-react";
+import { format } from "date-fns";
 import mongoose from "mongoose";
+import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
 
 export default async function TransactionsPage({
     searchParams,
 }: {
-    searchParams?: { page?: string };
+    searchParams?: Promise<{ page?: string }>;
 }) {
     const session = await auth();
     if (!session?.user?.schoolId) return <div>Unauthorized</div>;
 
     await connectDB();
-    const page = Number(searchParams?.page) || 1;
+    const params = await searchParams;
+    const page = Number(params?.page) || 1;
     const limit = 20;
     const skip = (page - 1) * limit;
 
@@ -29,21 +33,17 @@ export default async function TransactionsPage({
     const pages = Math.ceil(total / limit);
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link href="/school/finance" className="text-gray-500 hover:text-indigo-600">
-                        <ArrowLeft size={20} />
-                    </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Transaction History</h1>
-                        <p className="text-gray-500">All fee collections and waivers.</p>
-                    </div>
-                </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-white border rounded hover:bg-gray-50 text-gray-700">
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <PageHeader
+                title="Transaction History"
+                description="All fee collections and waivers"
+                showBackButton
+                autoBreadcrumb
+            >
+                <Button variant="outline" className="gap-2">
                     <Download size={16} /> Export CSV
-                </button>
-            </div>
+                </Button>
+            </PageHeader>
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
                 <table className="w-full text-left text-sm">
@@ -64,7 +64,7 @@ export default async function TransactionsPage({
                         ) : (
                             payments.map((p: any) => (
                                 <tr key={p._id} className="hover:bg-gray-50">
-                                    <td className="p-4">{new Date(p.date).toLocaleDateString()} <span className="text-xs text-gray-400">{new Date(p.date).toLocaleTimeString()}</span></td>
+                                    <td className="p-4">{format(new Date(p.date), "dd/MM/yyyy")} <span className="text-xs text-gray-400">{format(new Date(p.date), "h:mm a")}</span></td>
                                     <td className="p-4 font-mono text-xs">{p.receiptNumber}</td>
                                     <td className="p-4">
                                         <div className="font-medium">{p.student?.firstName} {p.student?.lastName}</div>

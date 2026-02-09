@@ -22,9 +22,16 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { createAnnouncement } from "@/lib/actions/communication.actions";
+import { createAnnouncement } from "@/lib/actions/academic-content.actions";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+
+// Note: createAnnouncement expects FormData, but here we were calling it with object?
+// Wait, my updated action handles FormData. 
+// The Component must submit FormData or I need to adapt.
+// createAnnouncement(formData: FormData)
+// But here onSubmit(values) passes values. 
+// I need to convert values to FormData.
 
 const formSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -62,18 +69,21 @@ export function CreateAnnouncementForm({
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
         try {
-            const result = await createAnnouncement({
-                schoolId,
-                authorId,
-                ...values,
-            });
+            const formData = new FormData();
+            formData.append("title", values.title);
+            formData.append("content", values.content);
+            formData.append("type", values.type);
+            formData.append("audience", values.audience);
+            if (values.targetClass) formData.append("targetClass", values.targetClass);
+
+            const result = await createAnnouncement(formData);
 
             if (result.success) {
-                toast.success("Announcement created successfully");
+                toast.success(result.message || "Announcement created successfully");
                 form.reset();
                 if (onSuccess) onSuccess();
             } else {
-                toast.error(result.error || "Failed to create announcement");
+                toast.error(result.message || "Failed to create announcement");
             }
         } catch (error) {
             toast.error("Something went wrong");

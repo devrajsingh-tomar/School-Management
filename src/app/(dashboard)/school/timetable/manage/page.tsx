@@ -62,8 +62,8 @@ export default function TimetableManager() {
             teacherId: selectedTeacher
         });
 
-        if (res.error) {
-            setSaveError(res.error);
+        if (!res.success) {
+            setSaveError(res.message || "Failed to save slot");
         } else {
             // Reload
             const slots = await getTimetableForClass(selectedClass);

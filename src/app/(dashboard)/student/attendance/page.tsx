@@ -14,13 +14,16 @@ import { getSectionAttendance } from "@/lib/actions/attendance.actions"; // This
    Better query: DailyAttendance.find({ "records.student": studentId }).
 */
 
+import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isToday, isSameDay } from "date-fns";
 import { getStudentAttendance } from "@/lib/actions/attendance.actions";
 
 export default async function StudentAttendancePage() {
     const session = await auth();
     if (!session?.user) return null;
 
-    const attendance = await getStudentAttendance(session.user.id);
+    if (!session?.user?.schoolId) return null;
+
+    const { records: attendance } = await getStudentAttendance(session.user.linkedStudentId || session.user.id, session.user.schoolId);
 
     return (
         <div className="space-y-6">
@@ -44,11 +47,11 @@ export default async function StudentAttendancePage() {
                             attendance.map((record: any) => (
                                 <tr key={record._id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {new Date(record.date).toLocaleDateString()}
+                                        {format(new Date(record.date), "dd/MM/yyyy")}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${record.status === "PRESENT" ? "bg-green-100 text-green-800" :
-                                                record.status === "ABSENT" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
+                                            record.status === "ABSENT" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
                                             }`}>
                                             {record.status}
                                         </span>

@@ -46,10 +46,10 @@ export async function createOrUpdateStaffProfile(data: {
 export async function getStaffList(schoolId: string) {
     try {
         await connectDB();
-        // Fetch all users who are staff
+        // Fetch all users who are staff (excluding SCHOOL_ADMIN)
         const staffUsers = await User.find({
             school: schoolId,
-            role: { $in: ["Teacher", "Admin", "Accountant", "Staff"] }
+            role: { $in: ["TEACHER", "ACCOUNTANT", "LIBRARIAN", "TRANSPORT_MANAGER", "STAFF"] }
         }).select("name email role phone");
 
         // Fetch their profiles

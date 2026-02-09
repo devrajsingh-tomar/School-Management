@@ -6,8 +6,9 @@ import { format } from "date-fns";
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const session = await auth();
     if (!session || !session.user || !session.user.schoolId) {
         return new Response("Unauthorized", { status: 401 });
@@ -18,7 +19,7 @@ export async function GET(
 
     await connectDB();
     const student = await Student.findOne({
-        _id: params.id,
+        _id: id,
         school: session.user.schoolId
     }).populate("class").populate("section").lean();
 
@@ -58,8 +59,8 @@ export async function GET(
     drawLine(`Date of Birth: ${format(new Date(student.dob), "dd MMMM yyyy")}`);
 
     if (student.class) {
-        let classText = `Class: ${student.class.name}`;
-        if (student.section) classText += ` - Section: ${student.section.name}`;
+        let classText = `Class: ${(student.class as any).name}`;
+        if (student.section) classText += ` - Section: ${(student.section as any).name}`;
         drawLine(classText);
     }
 
@@ -78,7 +79,7 @@ export async function GET(
 
     const pdfBytes = await pdfDoc.save();
 
-    return new Response(pdfBytes, {
+    return new Response(pdfBytes as any, {
         headers: {
             "Content-Type": "application/pdf",
             "Content-Disposition": `inline; filename="${student.firstName}_${type}.pdf"`,

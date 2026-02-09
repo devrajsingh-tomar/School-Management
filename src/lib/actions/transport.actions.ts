@@ -11,10 +11,10 @@ export async function createTransportRoute(formData: FormData) {
     const session = await auth();
     if (!session?.user?.schoolId) return { message: "Unauthorized" };
 
-    const name = formData.get("name");
-    const vehicleNumber = formData.get("vehicleNumber");
-    const driverName = formData.get("driverName");
-    const driverPhone = formData.get("driverPhone");
+    const name = formData.get("name") as string;
+    const vehicleNumber = formData.get("vehicleNumber") as string;
+    const driverName = formData.get("driverName") as string;
+    const driverPhone = formData.get("driverPhone") as string;
     const monthlyCost = Number(formData.get("monthlyCost"));
 
     const stopsJson = formData.get("stops") as string;

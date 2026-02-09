@@ -30,7 +30,7 @@ import { addDays, format } from "date-fns";
 const formSchema = z.object({
     bookId: z.string().min(1, "Select a book"),
     userId: z.string().min(1, "Select a user"),
-    days: z.coerce.number().min(1, "Minimum 1 day").max(30, "Max 30 days"),
+    days: z.number().min(1, "Minimum 1 day").max(30, "Max 30 days"),
 });
 
 export function IssueBookForm({
@@ -152,7 +152,11 @@ export function IssueBookForm({
                         <FormItem>
                             <FormLabel>Issue Duration (Days)</FormLabel>
                             <FormControl>
-                                <Input type="number" {...field} />
+                                <Input
+                                    type="number"
+                                    {...field}
+                                    onChange={e => field.onChange(Number(e.target.value))}
+                                />
                             </FormControl>
                             <FormDescription>
                                 Due Date: {format(returnDate, "PPP")}

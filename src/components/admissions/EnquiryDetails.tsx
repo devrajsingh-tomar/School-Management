@@ -7,7 +7,7 @@ import {
     convertEnquiryToStudent,
     updateEnquiry
 } from "@/lib/actions/enquiry.actions";
-import { EnquiryStatus } from "@/lib/db/models/Enquiry";
+import { EnquiryStatus } from "@/lib/types/enums";
 import { useRouter } from "next/navigation";
 import {
     ArrowLeft,
@@ -19,6 +19,7 @@ import {
     Loader2
 } from "lucide-react";
 import Link from "next/link";
+import { format } from "date-fns";
 
 export default function EnquiryDetails({ enquiry }: { enquiry: any }) {
     const router = useRouter();
@@ -88,9 +89,9 @@ export default function EnquiryDetails({ enquiry }: { enquiry: any }) {
                         <h3 className="text-lg font-semibold text-gray-800 border-b pb-3 mb-4">Student Details</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <DetailItem label="Gender" value={enquiry.gender} />
-                            <DetailItem label="Date of Birth" value={new Date(enquiry.dob).toLocaleDateString()} />
+                            <DetailItem label="Date of Birth" value={format(new Date(enquiry.dob), "dd/MM/yyyy")} />
                             <DetailItem label="Previous School" value={enquiry.previousSchool || "N/A"} />
-                            <DetailItem label="Applied Date" value={new Date(enquiry.createdAt).toLocaleDateString()} />
+                            <DetailItem label="Applied Date" value={format(new Date(enquiry.createdAt), "dd/MM/yyyy")} />
                         </div>
                     </div>
 
@@ -108,7 +109,7 @@ export default function EnquiryDetails({ enquiry }: { enquiry: any }) {
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold text-gray-800 border-b pb-3 mb-4">Test & Interview Results</h3>
                             <div className="grid grid-cols-2 gap-4">
-                                {enquiry.testDate && <DetailItem label="Test Date" value={new Date(enquiry.testDate).toLocaleString()} />}
+                                {enquiry.testDate && <DetailItem label="Test Date" value={format(new Date(enquiry.testDate), "dd/MM/yyyy h:mm a")} />}
                                 <DetailItem label="Test Score" value={enquiry.testScore ?? "Not Graded"} />
                                 <DetailItem label="Result" value={enquiry.examResult || "Pending"} />
                                 <DetailItem label="Interview Notes" value={enquiry.interviewNotes || "None"} className="col-span-2" />

@@ -1,11 +1,12 @@
 "use server";
 
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 import Announcement from "@/lib/db/models/Announcement";
 import MessageLog from "@/lib/db/models/MessageLog";
 import Class from "@/lib/db/models/Class";
 import User from "@/lib/db/models/User";
 import { revalidatePath } from "next/cache";
+import mongoose from "mongoose";
 
 export async function createAnnouncement(data: {
     schoolId: string;
@@ -132,5 +133,41 @@ export async function getMessageLogs(schoolId: string) {
     } catch (error: any) {
         console.error("Error fetching message logs:", error);
         return { success: false, error: error.message };
+    }
+}
+
+export async function getStudentNotices(studentId: string, schoolId: string) {
+    console.log("STUDENT PORTAL QUERY: getStudentNotices", { schoolId, studentId });
+    await connectDB();
+
+    if (!mongoose.Types.ObjectId.isValid(studentId) || !mongoose.Types.ObjectId.isValid(schoolId)) {
+        console.error("Invalid IDs provided to getStudentNotices", { studentId, schoolId });
+        return [];
+    }
+
+    try {
+        // Need student class for "Class" audience
+        const StudentModel = mongoose.models.Student;
+        const student = await StudentModel.findById(studentId).select("class").lean();
+
+        if (!student) return [];
+
+        const notices = await Announcement.find({
+            school: schoolId,
+            $or: [
+                { audience: "School" },
+                { audience: "Student" }, // "Student" audience in Announcement means "All Students" or specific? 
+                // Usually "Student" audience means "All Students". Specific targeting uses different mechanism typically.
+                // Assuming "Student" means all students.
+                { audience: "Class", targetClass: student.class }
+            ]
+        })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        return JSON.parse(JSON.stringify(notices));
+    } catch (error) {
+        console.error("Error fetching student notices:", error);
+        return [];
     }
 }

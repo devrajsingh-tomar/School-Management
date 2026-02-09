@@ -7,8 +7,9 @@ import mongoose from "mongoose";
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const session = await auth();
     if (!session || !session.user || !session.user.schoolId) {
         return new Response("Unauthorized", { status: 401 });
@@ -16,7 +17,7 @@ export async function GET(
 
     await connectDB();
     const payment = await FeePayment.findOne({
-        _id: params.id,
+        _id: id,
         school: session.user.schoolId
     }).populate("student", "firstName lastName admissionNumber class section").lean();
 

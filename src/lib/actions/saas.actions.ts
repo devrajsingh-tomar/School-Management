@@ -15,9 +15,8 @@ export async function getSaaSMetrics() {
         const activeSchools = await School.countDocuments({ status: "Active" });
         const totalUsers = await User.countDocuments(); // All users across all schools
 
-        // Mock revenue logic
-        // In real app, sum up invoices or plan values
-        const revenue = totalSchools * 1000; // Mock avg revenue
+        // Revenue tracking requires Payment/Invoice model integration
+        const revenue = 0;
 
         return {
             success: true,
@@ -64,7 +63,7 @@ export async function updateSchoolStatus(schoolId: string, status: "Active" | "S
     try {
         await connectDB();
         await School.findByIdAndUpdate(schoolId, { status, isActive: status === "Active" });
-        revalidatePath("/admin");
+        revalidatePath("/superadmin");
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -79,7 +78,7 @@ export async function updateSchoolPlan(schoolId: string, planData: { planName: s
             limits: planData.limits,
             features: planData.features
         });
-        revalidatePath("/admin");
+        revalidatePath("/superadmin");
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -102,7 +101,7 @@ export async function createPlan(data: any) {
     try {
         await connectDB();
         await SubscriptionPlan.create(data);
-        revalidatePath("/admin");
+        revalidatePath("/superadmin");
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };

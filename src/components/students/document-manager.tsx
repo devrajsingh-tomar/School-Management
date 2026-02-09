@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { createDocumentRecord, deleteDocument } from "@/lib/actions/document.actions";
 import { Button } from "@/components/ui/button";
@@ -113,7 +114,7 @@ export default function DocumentManager({
                                     <p className="font-medium hover:underline cursor-pointer">
                                         <a href={doc.url} target="_blank" rel="noopener noreferrer">{doc.name}</a>
                                     </p>
-                                    <p className="text-xs text-gray-500">{doc.type} • {new Date(doc.createdAt).toLocaleDateString()}</p>
+                                    <p className="text-xs text-gray-500">{doc.type} • {format(new Date(doc.createdAt), "dd/MM/yyyy")}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">

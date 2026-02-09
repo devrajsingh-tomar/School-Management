@@ -7,7 +7,7 @@ import { InventoryList } from "@/components/inventory/inventory-list";
 import { StockAdjustmentForm } from "@/components/forms/stock-adjustment-form";
 import { InventoryTransactionsTable } from "@/components/inventory/inventory-transactions-table";
 import { getInventoryItems, getInventoryTransactions } from "@/lib/actions/inventory.actions";
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 
 export default async function InventoryPage() {
     const session = await auth();

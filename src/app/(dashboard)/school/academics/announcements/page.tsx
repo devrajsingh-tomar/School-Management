@@ -1,10 +1,30 @@
 import { getClasses } from "@/lib/actions/academic.actions";
-import { createAnnouncement, getAnnouncements } from "@/lib/actions/academic-content.actions";
-import { Megaphone, Users, Bell } from "lucide-react";
+import { createAnnouncement, getAnnouncements } from "@/lib/actions/communication.actions"; // fixed import source
+import { Megaphone, Plus, Trash2 } from "lucide-react";
+import { format } from "date-fns";
+import { auth } from "@/auth";
 
 export default async function AnnouncementsPage() {
+    const session = await auth();
     const classes = await getClasses();
-    const announcements = await getAnnouncements();
+    const announcementsRes = await getAnnouncements(session?.user?.schoolId || "");
+    const announcements = announcementsRes.success ? announcementsRes.data : [];
+
+    async function postAnnouncement(formData: FormData) {
+        "use server";
+        const session = await auth();
+        if (!session?.user?.schoolId) return;
+
+        await createAnnouncement({
+            title: formData.get("title") as string,
+            content: formData.get("content") as string,
+            audience: formData.get("audience") as any,
+            targetClass: formData.get("targetClass") as string,
+            type: "Announcement",
+            schoolId: session.user.schoolId,
+            authorId: session.user.id
+        });
+    }
 
     return (
         <div className="space-y-6">
@@ -16,7 +36,7 @@ export default async function AnnouncementsPage() {
                     <h2 className="text-lg font-semibold mb-4 border-b pb-2 flex items-center gap-2">
                         <Megaphone size={18} /> specific Post Update
                     </h2>
-                    <form action={createAnnouncement} className="space-y-4">
+                    <form action={postAnnouncement} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Title</label>
                             <input name="title" required className="w-full border rounded p-2" placeholder="e.g. Sports Day" />
@@ -60,12 +80,12 @@ export default async function AnnouncementsPage() {
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
                                         <span className={`px-2 py-1 rounded text-xs font-bold ${ann.audience === "School" ? "bg-blue-100 text-blue-700" :
-                                                ann.audience === "Staff" ? "bg-purple-100 text-purple-700" :
-                                                    "bg-green-100 text-green-700"
+                                            ann.audience === "Staff" ? "bg-purple-100 text-purple-700" :
+                                                "bg-green-100 text-green-700"
                                             }`}>
                                             {ann.audience} {ann.targetClass ? `(${ann.targetClass?.name})` : ""}
                                         </span>
-                                        <span className="text-xs text-gray-400">{new Date(ann.createdAt).toLocaleDateString()}</span>
+                                        <span className="text-xs text-gray-400">{format(new Date(ann.createdAt), "dd/MM/yyyy")}</span>
                                     </div>
                                 </div>
                                 <h3 className="text-xl font-bold text-gray-800 mb-2">{ann.title}</h3>

@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
-@config "../../tailwind.config.ts";
+
 
 @layer base {
+
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -64,15 +71,41 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
+
+  /* Brand Colors */
+  .theme-blue {
+    --primary: 221.2 83.2% 53.3%;
+    --ring: 221.2 83.2% 53.3%;
+  }
+
+  .theme-green {
+    --primary: 142.1 76.2% 36.3%;
+    --ring: 142.1 76.2% 36.3%;
+  }
+
+  .theme-red {
+    --primary: 0 72.2% 50.6%;
+    --ring: 0 72.2% 50.6%;
+  }
+
+  .theme-indigo {
+    --primary: 243.4 75.4% 58.6%;
+    --ring: 243.4 75.4% 58.6%;
+  }
+
+  .theme-orange {
+    --primary: 24.6 95% 53.1%;
+    --ring: 24.6 95% 53.1%;
+  }
 }
 
 @layer base {
   * {
-    @apply border-gray-200;
     border-color: hsl(var(--border));
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }

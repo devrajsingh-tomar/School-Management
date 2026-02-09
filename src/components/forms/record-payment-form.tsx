@@ -2,9 +2,10 @@
 
 import { useActionState } from "react";
 import { recordPayment } from "@/lib/actions/finance.actions";
+import { ActionState } from "@/lib/types/actions";
 import { cn } from "@/lib/utils";
 
-const initialState = { message: "" };
+const initialState: ActionState<null> = { success: false, data: null, message: "" };
 
 export default function RecordPaymentForm({ students, fees }: { students: any[], fees: any[] }) {
     const [state, formAction, isPending] = useActionState(recordPayment, initialState);

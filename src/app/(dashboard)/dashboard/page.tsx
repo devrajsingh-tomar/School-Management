@@ -9,22 +9,22 @@ export default async function DashboardPage() {
         redirect("/login");
     }
 
-    const role = session.user.role;
+    const role = session.user.role?.toUpperCase();
+    console.log("Dashboard redirector, role:", role);
 
     switch (role) {
         case "SUPER_ADMIN":
-            redirect("/admin/schools");
+            redirect("/superadmin");
         case "SCHOOL_ADMIN":
         case "PRINCIPAL":
-            redirect("/school");
         case "TEACHER":
-            redirect("/teacher");
+        case "STAFF":
+        case "ACCOUNTANT":
+            redirect("/school");
         case "STUDENT":
-            redirect("/student");
         case "PARENT":
-            redirect("/parent"); // Future
+            redirect("/portal");
         default:
-            // Fallback for unhandled roles
             return (
                 <div className="p-8">
                     <h1 className="text-2xl font-bold">Welcome, {session.user.name}</h1>

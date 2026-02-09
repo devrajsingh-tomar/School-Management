@@ -3,6 +3,7 @@
 import { getClasses } from "@/lib/actions/academic.actions";
 import { createExam } from "@/lib/actions/exam.actions";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -11,6 +12,7 @@ export default function CreateExamPage() {
     const [subjects, setSubjects] = useState<{ name: string; maxMarks: number; passingMarks: number }[]>([
         { name: "", maxMarks: 100, passingMarks: 33 } // Default row
     ]);
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -33,12 +35,17 @@ export default function CreateExamPage() {
     };
 
     const handleSubmit = async (formData: FormData) => {
+        setLoading(true);
         formData.append("subjects", JSON.stringify(subjects));
-        const res = await createExam(formData);
-        if (res.message === "Exam Created") {
-            router.push("/school/exams");
-        } else {
-            alert(res.message);
+        try {
+            const res = await createExam(formData);
+            if (res.message === "Exam Created") {
+                router.push("/school/exams");
+            } else {
+                alert(res.message);
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -85,9 +92,13 @@ export default function CreateExamPage() {
                     <div className="border-t pt-4">
                         <div className="flex justify-between items-center mb-2">
                             <label className="block text-sm font-medium text-gray-700">Subjects & Marking Scheme</label>
-                            <button type="button" onClick={addSubject} className="text-xs flex items-center gap-1 bg-indigo-50 text-indigo-600 px-2 py-1 rounded">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={addSubject}
+                            >
                                 <Plus size={14} /> Add Subject
-                            </button>
+                            </Button>
                         </div>
                         <div className="space-y-2">
                             {subjects.map((sub, index) => (
@@ -113,17 +124,22 @@ export default function CreateExamPage() {
                                         required
                                         className="w-20 border rounded p-2 text-sm"
                                     />
-                                    <button type="button" onClick={() => removeSubject(index)} className="text-red-500 hover:text-red-700">
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon-sm"
+                                        onClick={() => removeSubject(index)}
+                                    >
                                         <Trash2 size={16} />
-                                    </button>
+                                    </Button>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <button className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700">
-                        Create Exam Schedule
-                    </button>
+                    <Button type="submit" disabled={loading} size="lg" className="w-full">
+                        {loading ? "Creating Quote..." : "Schedule Examination"}
+                    </Button>
                 </form>
             </div>
         </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { getClasses } from "@/lib/actions/academic.actions"; // We'll need to fetch classes
 import { getStudents } from "@/lib/actions/student.actions";
-import { markClassAttendance, getAttendanceByDate } from "@/lib/actions/attendance.actions";
+import { saveAttendance, getAttendanceByDate } from "@/lib/actions/attendance.actions";
 import { Loader2, Save, Calendar } from "lucide-react";
 
 // HACK: Since getClasses and getStudents are server actions, we should probably fetch them in a Server Component wrapper.
@@ -82,7 +82,7 @@ export default function StudentAttendancePage() {
                 status
             }));
 
-            await markClassAttendance({
+            await saveAttendance({
                 classId: selectedClass,
                 date: new Date(date),
                 records

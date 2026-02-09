@@ -4,7 +4,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AttendanceChart, GenderChart, PerformanceChart } from "@/components/reports/charts";
 import { ReportDownloader } from "@/components/reports/report-downloader";
-import { getAttendanceTrends, getDashboardStats, getGenderDistribution, getFinanceStats, getExamPerformanceStats } from "@/lib/actions/reports.actions";
+import { StudentStrengthTable, FeeCollectionSummary } from "@/components/reports/detailed-reports";
+import {
+    getAttendanceTrends,
+    getDashboardStats,
+    getGenderDistribution,
+    getFinanceStats,
+    getExamPerformanceStats,
+    getStudentStrengthReport,
+    getFeeCollectionReport
+} from "@/lib/actions/reports.actions";
 import connectDB from "@/lib/db/connect";
 
 export default async function ReportsPage() {
@@ -13,12 +22,22 @@ export default async function ReportsPage() {
 
     await connectDB();
 
-    const [statsRes, genderRes, attendanceRes, financeRes, performanceRes] = await Promise.all([
+    const [
+        statsRes,
+        genderRes,
+        attendanceRes,
+        financeRes,
+        performanceRes,
+        strengthRes,
+        feeReportRes
+    ] = await Promise.all([
         getDashboardStats(session.user.schoolId),
         getGenderDistribution(session.user.schoolId),
         getAttendanceTrends(session.user.schoolId),
         getFinanceStats(session.user.schoolId),
         getExamPerformanceStats(session.user.schoolId),
+        getStudentStrengthReport(session.user.schoolId),
+        getFeeCollectionReport(session.user.schoolId)
     ]);
 
     const stats = (statsRes.success && statsRes.data) ? statsRes.data : { studentCount: 0, teacherCount: 0, parentCount: 0 };
@@ -26,6 +45,8 @@ export default async function ReportsPage() {
     const attendanceData = (attendanceRes.success && attendanceRes.data) ? attendanceRes.data : [];
     const financeData = (financeRes.success && financeRes.data) ? financeRes.data : { income: 0, expenses: 0, pendingFees: 0 };
     const performanceData = (performanceRes.success && performanceRes.data) ? performanceRes.data : [];
+    const strengthData = (strengthRes.success && strengthRes.data) ? strengthRes.data : [];
+    const feeReportData = (feeReportRes.success && feeReportRes.data) ? feeReportRes.data : [];
 
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -36,57 +57,58 @@ export default async function ReportsPage() {
             <Tabs defaultValue="overview" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="detailed">Detailed Reports</TabsTrigger>
                     <TabsTrigger value="downloads">Downloads</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                            <CardHeader className="p-4 pb-2">
+                                <CardTitle className="text-xs font-bold text-gray-500 uppercase">Total Students</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stats.studentCount}</div>
+                            <CardContent className="p-4 pt-0">
+                                <div className="text-3xl font-black">{stats.studentCount}</div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+                            <CardHeader className="p-4 pb-2">
+                                <CardTitle className="text-xs font-bold text-gray-500 uppercase">Total Teachers</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stats.teacherCount}</div>
+                            <CardContent className="p-4 pt-0">
+                                <div className="text-3xl font-black">{stats.teacherCount}</div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Income YTD</CardTitle>
+                            <CardHeader className="p-4 pb-2">
+                                <CardTitle className="text-xs font-bold text-gray-500 uppercase">Income YTD</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">₹{financeData.income}</div>
+                            <CardContent className="p-4 pt-0">
+                                <div className="text-3xl font-black text-green-600">₹{financeData.income.toLocaleString()}</div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Expenses YTD</CardTitle>
+                            <CardHeader className="p-4 pb-2">
+                                <CardTitle className="text-xs font-bold text-gray-500 uppercase">Unpaid Fees</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">₹{financeData.expenses}</div>
+                            <CardContent className="p-4 pt-0">
+                                <div className="text-3xl font-black text-red-600">₹{financeData.pendingFees.toLocaleString()}</div>
                             </CardContent>
                         </Card>
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                        <Card className="col-span-4">
+                        <Card className="col-span-4 shadow-sm border-gray-100">
                             <CardHeader>
-                                <CardTitle>Attendance Trends (Last 7 Days)</CardTitle>
+                                <CardTitle>Attendance Trends</CardTitle>
                             </CardHeader>
                             <CardContent className="pl-2">
                                 <AttendanceChart data={attendanceData} />
                             </CardContent>
                         </Card>
-                        <Card className="col-span-3">
+                        <Card className="col-span-3 shadow-sm border-gray-100">
                             <CardHeader>
-                                <CardTitle>Gender Distribution</CardTitle>
+                                <CardTitle>Gender Split</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <GenderChart data={genderData} />
@@ -94,13 +116,34 @@ export default async function ReportsPage() {
                         </Card>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-1">
-                        <Card className="col-span-1">
+                    <Card className="shadow-sm border-gray-100">
+                        <CardHeader>
+                            <CardTitle>Academic Performance Trends</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pl-2">
+                            <PerformanceChart data={performanceData} />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="detailed" className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <Card className="lg:col-span-2 shadow-sm border-gray-100">
                             <CardHeader>
-                                <CardTitle>Exam Performance Trends (Avg %)</CardTitle>
+                                <CardTitle>Class-wise Strength Report</CardTitle>
+                                <CardDescription>Detailed breakdown of students across classes.</CardDescription>
                             </CardHeader>
-                            <CardContent className="pl-2">
-                                <PerformanceChart data={performanceData} />
+                            <CardContent>
+                                <StudentStrengthTable data={strengthData} />
+                            </CardContent>
+                        </Card>
+                        <Card className="shadow-sm border-green-100 bg-green-50/20">
+                            <CardHeader>
+                                <CardTitle>Fee Collection (Last 30 Days)</CardTitle>
+                                <CardDescription>Recent financial transactions and total collection.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <FeeCollectionSummary data={feeReportData} />
                             </CardContent>
                         </Card>
                     </div>

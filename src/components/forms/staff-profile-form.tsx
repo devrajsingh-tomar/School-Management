@@ -22,9 +22,9 @@ const formSchema = z.object({
     designation: z.string().min(1, "Designation is required"),
     department: z.string().min(1, "Department is required"),
     joiningDate: z.string(), // We'll parse to Date
-    basic: z.coerce.number().min(0),
-    allowances: z.coerce.number().min(0),
-    deductions: z.coerce.number().min(0),
+    basic: z.number().min(0),
+    allowances: z.number().min(0),
+    deductions: z.number().min(0),
     accountNumber: z.string().optional(),
     bankName: z.string().optional(),
     ifsc: z.string().optional(),
@@ -148,7 +148,12 @@ export function StaffProfileForm({
                                 <FormItem>
                                     <FormLabel>Basic</FormLabel>
                                     <FormControl>
-                                        <Input type="number" min="0" {...field} />
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            {...field}
+                                            onChange={e => field.onChange(Number(e.target.value))}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -161,7 +166,12 @@ export function StaffProfileForm({
                                 <FormItem>
                                     <FormLabel>Allowances</FormLabel>
                                     <FormControl>
-                                        <Input type="number" min="0" {...field} />
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            {...field}
+                                            onChange={e => field.onChange(Number(e.target.value))}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -174,7 +184,12 @@ export function StaffProfileForm({
                                 <FormItem>
                                     <FormLabel>Deductions</FormLabel>
                                     <FormControl>
-                                        <Input type="number" min="0" {...field} />
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            {...field}
+                                            onChange={e => field.onChange(Number(e.target.value))}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

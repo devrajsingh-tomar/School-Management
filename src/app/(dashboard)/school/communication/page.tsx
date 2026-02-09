@@ -8,7 +8,7 @@ import { AnnouncementList } from "@/components/communication/announcement-list";
 import { MessageLogsTable } from "@/components/communication/message-logs-table";
 import { getAnnouncements, getMessageLogs } from "@/lib/actions/communication.actions";
 import { getClasses } from "@/lib/actions/academic.actions";
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 
 export default async function CommunicationPage() {
     const session = await auth();

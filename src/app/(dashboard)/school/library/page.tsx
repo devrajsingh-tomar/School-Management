@@ -8,7 +8,7 @@ import { IssueBookForm } from "@/components/forms/issue-book-form";
 import { ActiveIssuesTable } from "@/components/library/active-issues-table";
 import { getBooks, getActiveIssues } from "@/lib/actions/library.actions";
 import { getSchoolUsers } from "@/lib/actions/user.actions";
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 
 export default async function LibraryPage() {
     const session = await auth();

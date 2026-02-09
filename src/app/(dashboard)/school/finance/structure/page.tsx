@@ -2,10 +2,18 @@ import { getClasses } from "@/lib/actions/academic.actions";
 import { getFeeStructures, createFeeStructure, deleteFeeStructure } from "@/lib/actions/finance.actions";
 import { Plus, Trash2 } from "lucide-react";
 import { revalidatePath } from "next/cache";
+import { format } from "date-fns";
+import { auth } from "@/auth";
 
 export default async function FeeStructurePage() {
+    const session = await auth();
     const classes = await getClasses();
     const feeStructures = await getFeeStructures();
+
+    async function postFeeStructure(formData: FormData) {
+        "use server";
+        await createFeeStructure(formData);
+    }
 
     return (
         <div className="space-y-6">
@@ -15,7 +23,7 @@ export default async function FeeStructurePage() {
                 {/* Form */}
                 <div className="bg-white p-6 rounded-lg shadow h-fit">
                     <h2 className="text-lg font-semibold mb-4 border-b pb-2">Add New Fee Head</h2>
-                    <form action={createFeeStructure} className="space-y-4">
+                    <form action={postFeeStructure} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Fee Name</label>
                             <input name="name" placeholder="e.g. Annual Charges" required className="w-full border rounded p-2" />
@@ -90,7 +98,7 @@ export default async function FeeStructurePage() {
                                             <span className="ml-1 text-gray-400">{fee.frequency}</span>
                                         </td>
                                         <td className="p-4 font-bold">₹ {fee.amount.toLocaleString()}</td>
-                                        <td className="p-4 text-gray-500">{new Date(fee.dueDate).toLocaleDateString()}</td>
+                                        <td className="p-4 text-gray-500">{format(new Date(fee.dueDate), "dd/MM/yyyy")}</td>
                                         <td className="p-4">
                                             <form action={async () => {
                                                 "use server";

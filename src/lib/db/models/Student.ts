@@ -1,13 +1,5 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
-
-export enum StudentStatus {
-    ENQUIRY = "Enquiry",
-    ADMITTED = "Admitted",
-    PROMOTED = "Promoted",
-    PASSED = "Passed",
-    TC = "TC",
-    SUSPENDED = "Suspended",
-}
+import { StudentStatus } from "@/lib/types/enums";
 
 export interface IStudent extends Document {
     school: Types.ObjectId;

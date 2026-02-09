@@ -41,7 +41,8 @@ export async function getAuditLogs(schoolId?: string) {
 
         return { success: true, data: JSON.parse(JSON.stringify(logs)) };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        console.error("Error fetching audit logs:", error);
+        return { success: false, data: [] };
     }
 }
 
@@ -52,7 +53,7 @@ export async function getStudentActivity(studentId: string) {
         // Parallel fetch for different activity sources
         const [attendance, fees, results] = await Promise.all([
             Attendance.find({ student: studentId }).sort({ date: -1 }).limit(5),
-            FeePayment.find({ student: studentId }).sort({ paymentDate: -1 }).limit(5),
+            FeePayment.find({ student: studentId }).sort({ date: -1 }).limit(5),
             Result.find({ student: studentId }).populate("exam").sort({ createdAt: -1 }).limit(5),
         ]);
 
@@ -69,8 +70,8 @@ export async function getStudentActivity(studentId: string) {
                 id: f._id,
                 type: "FEE",
                 title: `Fee Payment`,
-                date: f.paymentDate,
-                details: `Paid ₹${f.amount}`
+                date: f.date,
+                details: `Paid ₹${f.amountPaid}`
             })),
             ...results.map(r => ({
                 id: r._id,

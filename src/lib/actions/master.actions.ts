@@ -7,7 +7,9 @@ import AcademicSession from "@/lib/db/models/AcademicSession";
 import connectDB from "@/lib/db/connect";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { logAudit } from "./audit.actions";
+import { logAction } from "./audit.actions";
+import Class from "@/lib/db/models/Class";
+import Section from "@/lib/db/models/Section";
 
 export type FormState = {
     message?: string;
@@ -38,7 +40,7 @@ export async function createHouse(prevState: FormState, formData: FormData): Pro
             name: validated.data.name,
             color: validated.data.color
         });
-        await logAudit({ action: "CREATE_HOUSE", target: validated.data.name, details: validated.data });
+        await logAction(session.user.id, "CREATE_HOUSE", "HOUSE", validated.data, session.user.schoolId);
     } catch { return { message: "Error or Duplicate House" }; }
 
     revalidatePath("/school/setup");
@@ -68,7 +70,7 @@ export async function createCategory(prevState: FormState, formData: FormData): 
             school: session.user.schoolId,
             name: validated.data.name
         });
-        await logAudit({ action: "CREATE_CATEGORY", target: validated.data.name });
+        await logAction(session.user.id, "CREATE_CATEGORY", "CATEGORY", { name: validated.data.name }, session.user.schoolId);
     } catch { return { message: "Error or Duplicate Category" }; }
 
     revalidatePath("/school/setup");
@@ -121,7 +123,7 @@ export async function createSession(prevState: FormState, formData: FormData): P
             endDate: new Date(validated.data.endDate),
             isCurrent: validated.data.isCurrent
         });
-        await logAudit({ action: "CREATE_SESSION", target: validated.data.name });
+        await logAction(session.user.id, "CREATE_SESSION", "SESSION", { name: validated.data.name }, session.user.schoolId);
     } catch { return { message: "Database Error" }; }
 
     revalidatePath("/school/setup");
@@ -133,4 +135,57 @@ export async function getSessions() {
     if (!session?.user?.schoolId) return [];
     await connectDB();
     return JSON.parse(JSON.stringify(await AcademicSession.find({ school: session.user.schoolId }).sort({ startDate: -1 }).lean()));
+}
+
+export async function seedMasterData() {
+    const session = await auth();
+    if (!session?.user?.schoolId) return { success: false, message: "Unauthorized" };
+
+    await connectDB();
+    const schoolId = session.user.schoolId;
+
+    // 1. Categories
+    const categoriesCount = await StudentCategory.countDocuments({ school: schoolId });
+    if (categoriesCount === 0) {
+        const categories = ["General", "OBC", "SC", "ST"];
+        await StudentCategory.insertMany(categories.map(name => ({ school: schoolId, name })));
+    }
+
+    // 2. Classes & Sections
+    const classesCount = await Class.countDocuments({ school: schoolId });
+    if (classesCount === 0) {
+        const classNames = ["1st", "2nd", "3rd", "4th", "5th"];
+        for (const name of classNames) {
+            const newClass = await Class.create({ school: schoolId, name });
+
+            // Create Sections A and B for each class
+            const sections = ["A", "B"];
+            for (const sectionName of sections) {
+                const newSection = await Section.create({
+                    school: schoolId,
+                    class: newClass._id,
+                    name: sectionName
+                });
+
+                await Class.findByIdAndUpdate(newClass._id, {
+                    $push: { sections: newSection._id }
+                });
+            }
+        }
+    }
+
+    // 3. Houses (Optional but good to have)
+    const housesCount = await House.countDocuments({ school: schoolId });
+    if (housesCount === 0) {
+        const houses = [
+            { name: "Red", color: "#EF4444" },
+            { name: "Blue", color: "#3B82F6" },
+            { name: "Green", color: "#10B981" },
+            { name: "Yellow", color: "#F59E0B" }
+        ];
+        await House.insertMany(houses.map(h => ({ ...h, school: schoolId })));
+    }
+
+    revalidatePath("/school/students/new");
+    return { success: true, message: "Master data seeded successfully" };
 }

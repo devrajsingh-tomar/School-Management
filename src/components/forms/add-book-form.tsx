@@ -24,7 +24,7 @@ const formSchema = z.object({
     author: z.string().min(1, "Author is required"),
     isbn: z.string().optional(),
     category: z.string().optional(),
-    totalCopies: z.coerce.number().min(1, "At least 1 copy required"),
+    totalCopies: z.number().min(1, "At least 1 copy required"),
     shelfLocation: z.string().optional(),
 });
 
@@ -130,7 +130,12 @@ export function AddBookForm({ schoolId, onSuccess }: { schoolId: string; onSucce
                             <FormItem>
                                 <FormLabel>Total Copies</FormLabel>
                                 <FormControl>
-                                    <Input type="number" min="1" {...field} />
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        {...field}
+                                        onChange={e => field.onChange(Number(e.target.value))}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

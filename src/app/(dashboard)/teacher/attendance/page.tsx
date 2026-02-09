@@ -4,19 +4,21 @@ import AttendanceTracker from "@/components/forms/attendance-tracker";
 import { getClasses } from "@/lib/actions/academic.actions";
 import { getSectionAttendance } from "@/lib/actions/attendance.actions";
 import { getSchoolUsers } from "@/lib/actions/user.actions";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function TeacherAttendancePage({
     searchParams,
 }: {
-    searchParams: { [key: string]: string | undefined };
+    searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
     const classes = await getClasses();
 
     // Future Enhancement: Filter `classes` to only those taught by the logged-in teacher.
 
-    const classId = searchParams.classId;
-    const sectionId = searchParams.sectionId;
-    const date = searchParams.date;
+    const params = await searchParams;
+    const classId = params.classId;
+    const sectionId = params.sectionId;
+    const date = params.date;
 
     const isReady = classId && sectionId && date;
 
@@ -29,9 +31,12 @@ export default async function TeacherAttendancePage({
     }
 
     return (
-        <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">Take Attendance</h1>
-            <p className="text-sm text-gray-500">Select a class and section to mark attendance.</p>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <PageHeader
+                title="Take Attendance"
+                description="Select a class and section to mark attendance"
+                autoBreadcrumb
+            />
 
             <AttendanceFilter classes={classes} />
 

@@ -22,7 +22,7 @@ const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
     category: z.string().optional(),
     unit: z.string().min(1, "Unit is required (e.g. pcs, box)"),
-    minStockThreshold: z.coerce.number().min(0),
+    minStockThreshold: z.number().min(0),
     description: z.string().optional(),
 });
 
@@ -116,7 +116,12 @@ export function AddItemForm({ schoolId, onSuccess }: { schoolId: string; onSucce
                             <FormItem>
                                 <FormLabel>Min Stock Alert Level</FormLabel>
                                 <FormControl>
-                                    <Input type="number" min="0" {...field} />
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        {...field}
+                                        onChange={e => field.onChange(Number(e.target.value))}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

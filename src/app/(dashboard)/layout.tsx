@@ -1,22 +1,11 @@
-import { Sidebar } from "@/components/layout/sidebar";
-import { Topbar } from "@/components/layout/topbar";
+import { auth } from "@/auth";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    return (
-        <div className="h-full relative">
-            <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-[80] bg-gray-900">
-                <Sidebar />
-            </div>
-            <main className="md:pl-72 h-full">
-                <Topbar />
-                <div className="h-full bg-slate-50/50">
-                    {children}
-                </div>
-            </main>
-        </div>
-    );
+    // This layout does NOT render any sidebar
+    // Each route group (school, superadmin, portal) handles its own layout
+    return <>{children}</>;
 }

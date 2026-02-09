@@ -28,7 +28,7 @@ import { Loader2 } from "lucide-react";
 const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
     type: z.enum(["Boys", "Girls", "Co-ed"]),
-    capacity: z.coerce.number().min(0, "Capacity must be positive"),
+    capacity: z.number().min(0, "Capacity must be positive"),
     address: z.string().optional(),
 });
 
@@ -114,7 +114,12 @@ export function CreateHostelForm({ schoolId, onSuccess }: { schoolId: string; on
                             <FormItem>
                                 <FormLabel>Capacity (Beds)</FormLabel>
                                 <FormControl>
-                                    <Input type="number" min="0" {...field} />
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        {...field}
+                                        onChange={e => field.onChange(Number(e.target.value))}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

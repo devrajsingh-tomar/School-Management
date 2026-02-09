@@ -1,15 +1,30 @@
 import { getClasses } from "@/lib/actions/academic.actions";
 import { createHomework, getHomework } from "@/lib/actions/academic-content.actions";
 import Link from "next/link";
-import { BookOpen, Calendar, Link as LinkIcon, Plus } from "lucide-react";
+import { Plus, Calendar, Clock, BookOpen, Trash2, Link as LinkIcon } from "lucide-react";
+import { format } from "date-fns";
+import { PageHeader } from "@/components/ui/page-header";
+
+import { auth } from "@/auth";
 
 export default async function HomeworkPage() {
+    const session = await auth();
     const classes = await getClasses();
     const homeworkList = await getHomework();
 
+    async function postHomework(formData: FormData) {
+        "use server";
+        await createHomework(formData);
+    }
+
     return (
-        <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Homework & Assignments</h1>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <PageHeader
+                title="Homework & Assignments"
+                description="Assign and manage homework for your classes"
+                showBackButton
+                autoBreadcrumb
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Form */}
@@ -17,7 +32,7 @@ export default async function HomeworkPage() {
                     <h2 className="text-lg font-semibold mb-4 border-b pb-2 flex items-center gap-2">
                         <Plus size={18} /> Assign Homework
                     </h2>
-                    <form action={createHomework} className="space-y-4">
+                    <form action={postHomework} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Class</label>
                             <select name="classId" required className="w-full border rounded p-2 bg-white">
@@ -71,7 +86,7 @@ export default async function HomeworkPage() {
                                     </div>
                                     <div className="text-right">
                                         <div className="text-xs text-gray-500 flex items-center justify-end gap-1">
-                                            <Calendar size={12} /> Due: {new Date(hw.dueDate).toLocaleDateString()}
+                                            <Calendar size={12} /> Due: {format(new Date(hw.dueDate), "dd/MM/yyyy")}
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1">by {hw.teacher?.name}</div>
                                     </div>

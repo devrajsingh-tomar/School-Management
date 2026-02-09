@@ -68,7 +68,9 @@ export function SchoolsTable({ schools, plans }: { schools: any[], plans: any[] 
                                     <div className="text-xs text-muted-foreground">{school.slug}</div>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge variant="outline">{school.plan || "Free"}</Badge>
+                                    <Badge variant={school.plan === "Enterprise" ? "default" : school.plan === "Pro" ? "secondary" : "outline"} className={school.plan === "Enterprise" ? "bg-indigo-600 hover:bg-indigo-700" : ""}>
+                                        {school.plan || "Free"}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell className="w-[200px]">
                                     <div className="flex justify-between text-xs mb-1">

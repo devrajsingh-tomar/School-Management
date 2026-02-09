@@ -1,6 +1,7 @@
 
 import { getExams } from "@/lib/actions/exam.actions";
 import Link from "next/link";
+import { format } from "date-fns";
 
 export default async function TeacherExamsPage() {
     const exams = await getExams();
@@ -21,7 +22,7 @@ export default async function TeacherExamsPage() {
                                     <div className="px-4 py-4 sm:px-6">
                                         <div className="flex items-center justify-between">
                                             <p className="text-sm font-medium text-indigo-600 truncate">{exam.name}</p>
-                                            <p className="text-xs text-gray-500">{new Date(exam.date).toLocaleDateString()}</p>
+                                            <p className="text-xs text-gray-500">{format(new Date(exam.date), "dd/MM/yyyy")}</p>
                                         </div>
                                         <div className="mt-2 sm:flex sm:justify-between">
                                             <div className="sm:flex">

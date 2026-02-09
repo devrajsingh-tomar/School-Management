@@ -7,13 +7,14 @@ import mongoose from "mongoose";
 
 export async function GET(
     req: Request,
-    { params }: { params: { resultId: string } }
+    { params }: { params: Promise<{ resultId: string }> }
 ) {
+    const { resultId } = await params;
     const session = await auth();
     if (!session?.user?.schoolId) return new Response("Unauthorized", { status: 401 });
 
     await connectDB();
-    const result = await Result.findById(params.resultId)
+    const result = await Result.findById(resultId)
         .populate("student", "firstName lastName admissionNumber rollNumber dob")
         .populate("class", "name section")
         .populate("exam", "name startDate")
@@ -46,7 +47,7 @@ export async function GET(
     drawLabelVal("Student Name:", `${student.firstName} ${student.lastName}`, 50);
     drawLabelVal("Admission No:", student.admissionNumber, 300);
     y -= 20;
-    drawLabelVal("Class:", `${result.class.name}`, 50);
+    drawLabelVal("Class:", `${(result.class as any)?.name}`, 50);
     drawLabelVal("Exam:", exam.name, 300);
     y -= 20;
     drawLabelVal("Result Status:", result.status, 50);

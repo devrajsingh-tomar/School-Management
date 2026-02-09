@@ -4,7 +4,9 @@ import { saveExamResults } from "@/lib/actions/exam.actions";
 import { useFormState, useFormStatus } from "react-dom";
 import { cn } from "@/lib/utils";
 
-const initialState = { message: "" };
+import { ActionState } from "@/lib/types/actions";
+
+const initialState: ActionState<null> = { success: false, data: null, message: "" };
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -28,7 +30,6 @@ export default function ResultsForm({
     students: any[],
     existingResults: any[]
 }) {
-    // @ts-ignore
     const [state, formAction] = useFormState(saveExamResults, initialState);
 
     const getMarks = (studentId: string) => {
@@ -55,10 +56,11 @@ export default function ResultsForm({
                                     <div className="text-sm font-medium text-gray-900">{student.name}</div>
                                     <div className="text-sm text-gray-500">{student.email}</div>
                                 </td>
+                                <input type="hidden" name="studentIds" value={student._id} />
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <input
                                         type="number"
-                                        name={`marks-${student._id}`}
+                                        name={`marks-${student._id}-Total`}
                                         step="0.5"
                                         defaultValue={getMarks(student._id)}
                                         placeholder="0.0"
@@ -75,6 +77,6 @@ export default function ResultsForm({
                 {state?.message && <span className={cn("text-sm", state.message.includes("success") ? "text-green-600" : "text-red-600")}>{state.message}</span>}
                 <SubmitButton />
             </div>
-        </form>
+        </form >
     );
 }

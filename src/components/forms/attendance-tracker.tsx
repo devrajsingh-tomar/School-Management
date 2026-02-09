@@ -70,6 +70,7 @@ export default function AttendanceTracker({
                                         </div>
                                     </div>
                                 </td>
+                                <input type="hidden" name="studentIds" value={user._id} />
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex gap-4">
                                         {["PRESENT", "ABSENT", "LATE", "EXCUSED"].map((status) => (

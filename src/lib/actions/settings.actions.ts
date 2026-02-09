@@ -44,7 +44,7 @@ export async function updatePermissions(role: string, permissions: string[], sch
             { upsert: true, new: true }
         );
 
-        revalidatePath("/admin/settings");
+        revalidatePath("/superadmin/settings");
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };

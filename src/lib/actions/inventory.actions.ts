@@ -1,6 +1,6 @@
 "use server";
 
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 import InventoryItem from "@/lib/db/models/InventoryItem";
 import InventoryTransaction from "@/lib/db/models/InventoryTransaction";
 import { revalidatePath } from "next/cache";

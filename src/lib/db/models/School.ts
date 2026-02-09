@@ -5,6 +5,7 @@ export interface ISchool extends Document {
     slug: string;
     address?: string;
     contactEmail: string;
+    websiteUrl?: string; // School's public website URL
     status: "Active" | "Suspended" | "Pending";
     plan: "Free" | "Basic" | "Pro" | "Enterprise"; // Should ideally be ObjectId ref to SubscriptionPlan
     limits: {
@@ -34,6 +35,7 @@ const SchoolSchema = new Schema<ISchool>(
         slug: { type: String, required: true, unique: true, index: true },
         address: { type: String },
         contactEmail: { type: String, required: true },
+        websiteUrl: { type: String }, // School's public website URL
 
         status: {
             type: String,

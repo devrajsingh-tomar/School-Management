@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import connectDB from "@/lib/db/connect";
 import Guardian from "@/lib/db/models/Guardian";
-import AuditLog from "@/lib/db/models/AuditLog";
+import { logAction } from "@/lib/actions/audit.actions";
 import { guardianSchema } from "@/lib/validators/student";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -22,13 +22,13 @@ export async function createGuardian(data: z.infer<typeof guardianSchema>) {
         school: session.user.schoolId,
     });
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "CREATE_GUARDIAN",
-        target: guardian._id.toString(),
-        details: { name: `${guardian.firstName} ${guardian.lastName}` },
-    });
+    await logAction(
+        session.user.id,
+        "CREATE_GUARDIAN",
+        "GUARDIAN",
+        { name: `${guardian.firstName} ${guardian.lastName}`, id: guardian._id },
+        session.user.schoolId
+    );
 
     return JSON.parse(JSON.stringify(guardian));
 }
@@ -72,13 +72,13 @@ export async function updateGuardian(id: string, data: Partial<z.infer<typeof gu
 
     if (!guardian) throw new Error("Guardian not found");
 
-    await AuditLog.create({
-        school: session.user.schoolId,
-        actor: session.user.id,
-        action: "UPDATE_GUARDIAN",
-        target: id,
-        details: { changes: data },
-    });
+    await logAction(
+        session.user.id,
+        "UPDATE_GUARDIAN",
+        "GUARDIAN",
+        { id, changes: data },
+        session.user.schoolId
+    );
 
     return JSON.parse(JSON.stringify(guardian));
 }

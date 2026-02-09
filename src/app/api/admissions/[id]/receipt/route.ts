@@ -6,8 +6,9 @@ import { format } from "date-fns";
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const session = await auth();
     if (!session || !session.user || !session.user.schoolId) {
         return new Response("Unauthorized", { status: 401 });
@@ -15,7 +16,7 @@ export async function GET(
 
     await connectDB();
     const enquiry = await Enquiry.findOne({
-        _id: params.id,
+        _id: id,
         school: session.user.schoolId
     }).populate("classAppliedFor").lean();
 
@@ -60,7 +61,7 @@ export async function GET(
 
     drawLine(`Received with thanks from: ${enquiry.parentName}`);
     drawLine(`For Student: ${enquiry.studentName}`);
-    drawLine(`Class: ${enquiry.classAppliedFor?.name}`);
+    drawLine(`Class: ${(enquiry.classAppliedFor as any)?.name}`);
 
     y -= 10;
     drawLine(`Admission Status: CONFIRMED`);
@@ -74,7 +75,7 @@ export async function GET(
 
     const pdfBytes = await pdfDoc.save();
 
-    return new Response(pdfBytes, {
+    return new Response(pdfBytes as any, {
         headers: {
             "Content-Type": "application/pdf",
             "Content-Disposition": `inline; filename="${enquiry.studentName}_Receipt.pdf"`,
