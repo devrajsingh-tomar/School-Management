@@ -2,11 +2,7 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-    throw new Error(
-        "Please define the MONGODB_URI environment variable inside .env.local"
-    );
-}
+// Check moved inside connectDB function to avoid build errors when env vars are missing during static generation
 
 /**
  * Global is used here to maintain a cached connection across hot reloads
@@ -40,6 +36,12 @@ async function connectDB() {
     // Log registered models for debugging
     if (process.env.NODE_ENV === "development") {
         console.log("Registered Models:", mongoose.modelNames());
+    }
+
+    if (!MONGODB_URI) {
+        throw new Error(
+            "Please define the MONGODB_URI environment variable inside .env.local"
+        );
     }
 
     if (cached!.conn) {
