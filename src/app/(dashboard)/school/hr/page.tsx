@@ -10,6 +10,8 @@ import { GeneratePayrollButton } from "@/components/hr/generate-payroll-button";
 import { getStaffList, getLeaveRequests, getPayrolls } from "@/lib/actions/hr.actions";
 import connectDB from "@/lib/db/connect";
 
+export const dynamic = "force-dynamic";
+
 export default async function HRPage() {
     const session = await auth();
     if (!session?.user || !session.user.schoolId) redirect("/login");

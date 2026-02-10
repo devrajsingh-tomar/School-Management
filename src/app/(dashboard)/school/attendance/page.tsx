@@ -10,6 +10,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
+export const dynamic = "force-dynamic";
+
 export default async function AttendanceDashboard() {
     const today = new Date().toISOString().split("T")[0];
     const stats = await getDailyAttendanceStats(today) || [];

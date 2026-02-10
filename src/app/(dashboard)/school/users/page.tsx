@@ -3,6 +3,8 @@ import { getSchoolUsers } from "@/lib/actions/user.actions";
 import { getClasses } from "@/lib/actions/academic.actions";
 import { IUser } from "@/lib/db/models/User";
 
+export const dynamic = "force-dynamic";
+
 export default async function SchoolUsersPage() {
     const users = await getSchoolUsers();
     const classes = await getClasses();
