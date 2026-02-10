@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Plus, Eye, Edit3, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 
+export const dynamic = "force-dynamic";
+
 export default async function ExamsPage() {
     const exams = await getExams();
 

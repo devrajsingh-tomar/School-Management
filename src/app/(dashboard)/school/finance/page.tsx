@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
+export const dynamic = "force-dynamic";
+
 export default async function FinancePage() {
     const stats = await getFinanceStats();
 

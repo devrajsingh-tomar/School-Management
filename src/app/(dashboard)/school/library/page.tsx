@@ -10,6 +10,8 @@ import { getBooks, getActiveIssues } from "@/lib/actions/library.actions";
 import { getSchoolUsers } from "@/lib/actions/user.actions";
 import connectDB from "@/lib/db/connect";
 
+export const dynamic = "force-dynamic";
+
 export default async function LibraryPage() {
     const session = await auth();
     if (!session?.user || !session.user.schoolId) redirect("/login");

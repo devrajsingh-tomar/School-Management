@@ -2,6 +2,8 @@ import { getRoutes } from "@/lib/actions/transport.actions";
 import Link from "next/link";
 import { Bus, Plus, Users, MapPin } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function TransportPage() {
     const routes = await getRoutes();
 
