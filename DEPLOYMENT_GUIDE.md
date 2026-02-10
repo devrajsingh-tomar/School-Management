@@ -35,11 +35,12 @@ git push origin main
     | Variable Name     | Value                                                              |
     | :---------------- | :----------------------------------------------------------------- |
     | `MONGODB_URI`     | Your connection string from `.env.local`                           |
-    | `NEXTAUTH_SECRET` | A long random string (e.g., generated via `openssl rand -base64 32`) |
+    | `NEXTAUTH_SECRET` | Calculate a secret (or use `openssl rand -base64 32`)              |
+    | `AUTH_SECRET`     | **Required for NextAuth v5**. Use the SAME value as `NEXTAUTH_SECRET` |
     | `NEXTAUTH_URL`    | Your Vercel domain (e.g., `https://your-project.vercel.app`)       |
 
-    *   *Tip: For the initial deployment, you can set `NEXTAUTH_URL` later once you know the generated domain, or set it to `http://localhost:3000` temporarily if just testing building.*
-    *   *Better: Vercel automatically sets `VERCEL_URL`, but NextAuth.js expects `NEXTAUTH_URL`. Vercel deployments work best if you set the canonical URL.*
+    *   *Tip: NextAuth v5 is strict. You MUST provide `AUTH_SECRET`.*
+    *   *Also: Ensure you Redeploy after adding these variables.*
 
 6.  Click **Deploy**.
 
