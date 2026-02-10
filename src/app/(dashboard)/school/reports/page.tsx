@@ -16,6 +16,8 @@ import {
 } from "@/lib/actions/reports.actions";
 import connectDB from "@/lib/db/connect";
 
+export const dynamic = "force-dynamic";
+
 export default async function ReportsPage() {
     const session = await auth();
     if (!session?.user || !session.user.schoolId) redirect("/login");

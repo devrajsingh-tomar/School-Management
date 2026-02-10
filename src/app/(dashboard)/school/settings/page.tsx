@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getSchoolDetails } from "@/lib/actions/school.actions";
 import { SchoolSettingsClient } from "./school-settings-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
     const session = await auth();
 
