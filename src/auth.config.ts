@@ -8,7 +8,7 @@ export const authConfig = {
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
-            const role = auth?.user?.role?.toUpperCase();
+            const role = (auth?.user?.role || "").toUpperCase();
             const pathname = nextUrl.pathname;
 
             const isOnSuperAdmin = pathname.startsWith("/superadmin") && !pathname.includes("/login");
